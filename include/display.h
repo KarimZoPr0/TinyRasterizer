@@ -1,12 +1,14 @@
 //
 // Created by Karim on 2023-10-07.
 //
+#ifndef INC_3D_GRAPHICS_DISPLAY_H
+#define INC_3D_GRAPHICS_DISPLAY_H
 
 #include "stdbool.h"
 #include "SDL.h"
 
-#ifndef INC_3D_GRAPHICS_DISPLAY_H
-#define INC_3D_GRAPHICS_DISPLAY_H
+#define FPS 30
+#define FRAME_TARGET_TIME (1000/FPS)
 
 extern SDL_Window *window;
 extern SDL_Renderer *renderer;

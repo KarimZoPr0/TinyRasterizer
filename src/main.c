@@ -5,12 +5,13 @@
 vec3_t cube_points[N_POINTS]; // 9x9x9 cube
 vec2_t projected_points[N_POINTS];
 
-vec3_t camera_position = {0,0,-5};
-vec3_t cube_rotation = {0, 0, 0};
+vec3_t camera_position = { 0, 0, -5 };
+vec3_t cube_rotation = { 0, 0, 0 };
 
 float fov_factor = 640;
 
 bool is_running = false;
+Uint32 previous_frame_time = 0;
 
 void setup( )
 {
@@ -59,14 +60,23 @@ void process_input( )
 vec2_t project( vec3_t point )
 {
     vec2_t projected_point = {
-            (fov_factor * point.x) / point.z,
-            (fov_factor * point.y) / point.z
+            ( fov_factor * point.x ) / point.z,
+            ( fov_factor * point.y ) / point.z
     };
     return projected_point;
 }
 
 void update( )
 {
+
+    int time_to_wait = FRAME_TARGET_TIME - (SDL_GetTicks() - previous_frame_time);
+
+    if(time_to_wait > 0 && time_to_wait <= FRAME_TARGET_TIME)
+    {
+        SDL_Delay(time_to_wait);
+    }
+
+    previous_frame_time = SDL_GetTicks( );
     cube_rotation.x = cube_rotation.y = cube_rotation.z += 0.01;
 
     for( int i = 0; i < N_POINTS; ++i )
@@ -74,9 +84,9 @@ void update( )
         vec3_t point = cube_points[ i ];
 
         // Rotate points
-        vec3_t transformed_point = vec3_rotate_x(point, cube_rotation.x);
-        transformed_point = vec3_rotate_y(transformed_point, cube_rotation.y);
-        transformed_point = vec3_rotate_z(transformed_point, cube_rotation.z);
+        vec3_t transformed_point = vec3_rotate_x( point, cube_rotation.x );
+        transformed_point = vec3_rotate_y( transformed_point, cube_rotation.y );
+        transformed_point = vec3_rotate_z( transformed_point, cube_rotation.z );
 
         // Translate the points away from the camera
         transformed_point.z -= camera_position.z;
@@ -99,8 +109,8 @@ void render( )
     {
         vec2_t projected_point = projected_points[ i ];
         draw_rect(
-                projected_point.x + window_width/2 ,
-                projected_point.y + window_height/2,
+                projected_point.x + window_width / 2,
+                projected_point.y + window_height / 2,
                 4,
                 4,
                 0xFFFFFF00
