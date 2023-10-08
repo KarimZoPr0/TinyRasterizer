@@ -93,7 +93,7 @@ void draw_rect( int x, int y, int width, int height, uint32_t color )
     {
         for( int col = x; col < x + width; ++col )
         {
-            color_buffer[ ( row * window_width ) + col ] = color;
+            draw_pixel(col, row, color);
         }
     }
 }
