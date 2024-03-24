@@ -1,16 +1,21 @@
-cmake_minimum_required(VERSION 3.26)
+cmake_minimum_required(VERSION 3.10)
 project(3D_Graphics C)
 
 set(CMAKE_C_STANDARD 17)
-set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake_modules)
 
-set(SDL2_PATH "C:/SDL2-2.28.4/x86_64-w64-mingw32")
+add_library(game SHARED game/game.c)
 
-find_package(SDL2 REQUIRED)
-include_directories(${SDL2_INCLUDE_DIR})
+add_executable(3D_Graphics src/main.c)
 
-file(GLOB CLIENT_SOURCES src/*.c include/*.h)
+find_package(SDL2 CONFIG REQUIRED)
+target_link_libraries(3D_Graphics
+        PRIVATE
+        $<TARGET_NAME_IF_EXISTS:SDL2::SDL2main>
+        $<IF:$<TARGET_EXISTS:SDL2::SDL2>,SDL2::SDL2,SDL2::SDL2-static>
+)
 
-add_executable(3D_Graphics ${CLIENT_SOURCES})
-
-target_link_libraries(${PROJECT_NAME} ${SDL2_LIBRARY})
+target_link_libraries(game
+        PRIVATE
+        $<TARGET_NAME_IF_EXISTS:SDL2::SDL2main>
+        $<IF:$<TARGET_EXISTS:SDL2::SDL2>,SDL2::SDL2,SDL2::SDL2-static>
+)

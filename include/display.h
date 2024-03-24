@@ -4,27 +4,15 @@
 #ifndef INC_3D_GRAPHICS_DISPLAY_H
 #define INC_3D_GRAPHICS_DISPLAY_H
 
-#include "stdbool.h"
-#include "SDL.h"
-
 #define FPS 60
 #define FRAME_TARGET_TIME (1000/FPS)
 
-extern SDL_Window *window;
-extern SDL_Renderer *renderer;
-extern uint32_t *color_buffer;
-extern SDL_Texture *color_buffer_texture;
-extern int window_width;
-extern int window_height;
-
-bool initialize_window( void );
-void draw_grid( );
-void draw_pixel(int x, int y, uint32_t color);
-void draw_line(int x0, int y0, int x1, int y1, uint32_t color);
-void draw_triangle(int x0, int y0, int x1, int y1, int x2, int y2, uint32_t color);
-void draw_rect( int x, int y, int width, int height, uint32_t color );
-void render_color_buffer( );
-void clear_color_buffer( uint32_t color );
-void destroy_window( );
+void D_Grid2D( game_color_buffer_t *buffer);
+void D_Pixel2D( game_color_buffer_t *buffer, int x, int y, uint32_t color);
+void D_Line2D( game_color_buffer_t *buffer, int x0, int y0, int x1, int y1, uint32_t color);
+void D_Triangle2D( game_color_buffer_t *buffer, int x0, int y0, int x1, int y1, int x2, int y2, uint32_t color);
+void D_Rect2D( game_color_buffer_t *buffer, int x, int y, int width, int height, uint32_t color );
+// void render_color_buffer( uint32_t *color_buffer);
+// void clear_color_buffer(uint32_t *color_buffer, uint32_t color );
 
 #endif //INC_3D_GRAPHICS_DISPLAY_H

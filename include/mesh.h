@@ -21,8 +21,9 @@ typedef struct
     vec3_t rotation;    // Rotations with x,y and z values
 } mesh_t;
 
-extern mesh_t mesh;
+
 
 void load_cube_mesh_data();
+void load_obj_file_data(mesh_t *mesh, char *filename);
 
 #endif //INC_3D_GRAPHICS_MESH_H
