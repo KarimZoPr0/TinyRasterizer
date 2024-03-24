@@ -2,7 +2,7 @@
 
 Working on strengthening my understanding in 3D Graphics.
 
-##Changes
+## Changes
 
 - Added hot reloading. Currenly windows only
 
