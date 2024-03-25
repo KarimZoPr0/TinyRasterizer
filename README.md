@@ -2,10 +2,12 @@
 
 Working on strengthening my understanding in 3D Graphics.
 
-## Changes
+## Features
 
-- Added hot reloading. Currenly windows only
+- Linear transformation
+- Triangles and vertices
+- Obj files
+- Hot reloading (Windows only)
 
-Current progress:
 
 https://github.com/KarimZoPr0/3D_Graphics/assets/58335539/8f312720-7dae-4c06-9756-ede079398891
