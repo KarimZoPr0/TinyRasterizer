@@ -5,7 +5,7 @@ Working on strengthening my understanding in 3D Graphics.
 
 ## Features
 
-- Triangles and vertices
+- Mesh
 - Obj files
 - Hot reloading (Windows only)
 - Semi transparent window
