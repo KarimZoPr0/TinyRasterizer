@@ -12,6 +12,7 @@
 #include "mesh.c"
 #include "triangle.c"
 #include "vector.c"
+#include "input.c"
 
 global vec3_t camera_position = { 0, 0, -100 };
 global vec3_t mesh_rotation = { 0, 0, 0 };
@@ -28,7 +29,7 @@ vec2_t project( vec3_t point )
 }
 
 function void
-update( game_state_t *state, game_color_buffer_t *buffer )
+update( game_state_t *state, game_input_t *input, game_color_buffer_t *buffer )
 {
     local_persist Uint32 previous_frame_time = 0;
     {
@@ -73,8 +74,8 @@ update( game_state_t *state, game_color_buffer_t *buffer )
                 vec2_t projected_point = project( transformed_vertex );
 
                 // Scale and translate the projected points to the middle of the screen
-                projected_point.x += ( (float)buffer->width / 2 );
-                projected_point.y += ( (float)buffer->height / 2 );
+                projected_point.x += ( ( float ) buffer->width / 2 );
+                projected_point.y += ( ( float ) buffer->height / 2 );
 
                 // Save the projected 2D vector in the array of projected points
                 projected_triangle.points[ j ] = projected_point;
@@ -86,14 +87,26 @@ update( game_state_t *state, game_color_buffer_t *buffer )
         array_push( triangles_to_render, projected_triangle );
     }
 
-
-    return;
-    if( state->player.x + 50 >= buffer->width || state->player.x < 0 )
+    if(input->up == 1)
     {
-        state->offset *= -1;
+        state->player.y -= state->offset;
+    }
+    else if(input->down == 1)
+    {
+        state->player.y += state->offset;
     }
 
-    state->player.x += state->offset * 0;
+    if( input->right )
+    {
+        state->player.x += state->offset;
+    }
+    else if( input->left )
+    {
+        state->player.x -= state->offset;
+    }
+
+    state->player.x = SDL_clamp(state->player.x, 0, buffer->width - 50);
+    state->player.y = SDL_clamp(state->player.y, 0, buffer->height - 50);
 }
 
 function void
@@ -106,30 +119,30 @@ render( game_state_t *state, game_color_buffer_t *buffer )
     for( int i = 0; i < num_triangles; ++i )
     {
         triangle_t triangle = triangles_to_render[ i ];
-        D_Rect2D( buffer, (int)triangle.points[ 1 ].x, (int)triangle.points[ 1 ].y, 3, 3, 0xFFFFFF00 );
-        D_Rect2D( buffer, (int)triangle.points[ 0 ].x, (int)triangle.points[ 0 ].y, 3, 3, 0xFFFFFF00 );
-        D_Rect2D( buffer, (int)triangle.points[ 2 ].x, (int)triangle.points[ 2 ].y, 3, 3, 0xFFFFFF00 );
+        D_Rect2D( buffer, ( int ) triangle.points[ 1 ].x, ( int ) triangle.points[ 1 ].y, 3, 3, 0xFFFFFF00 );
+        D_Rect2D( buffer, ( int ) triangle.points[ 0 ].x, ( int ) triangle.points[ 0 ].y, 3, 3, 0xFFFFFF00 );
+        D_Rect2D( buffer, ( int ) triangle.points[ 2 ].x, ( int ) triangle.points[ 2 ].y, 3, 3, 0xFFFFFF00 );
 
         D_Triangle2D(
                 buffer,
                 ( int ) triangle.points[ 0 ].x, ( int ) triangle.points[ 0 ].y,
                 ( int ) triangle.points[ 1 ].x, ( int ) triangle.points[ 1 ].y,
                 ( int ) triangle.points[ 2 ].x, ( int ) triangle.points[ 2 ].y,
-                0xFFFF00FF
+                0xFF00FFFF
         );
     }
 
     array_free( triangles_to_render );
 
+    D_Rect2D( buffer, state->player.x, state->player.y, state->player.w, state->player.h, 0xFF00FF00 );
     return;
     D_Rect2D( buffer, 1000, 700, 100, 100, 0xFF00FF00 );
     D_Rect2D( buffer, 500, 500, 100, 100, 0xFF00FFFF );
-    D_Rect2D( buffer, state->player.x, state->player.y, state->player.w, state->player.h, 0xFFFF0FF0 );
 }
 
 
 root_function void
-game_update_and_render( game_memory_t *game_memory, game_color_buffer_t *buffer )
+game_update_and_render( game_memory_t *game_memory, game_input_t *input, game_color_buffer_t *buffer )
 {
     game_state_t *state = ( game_state_t * ) game_memory->memory;
     if( !game_memory->is_initialized )
@@ -137,12 +150,12 @@ game_update_and_render( game_memory_t *game_memory, game_color_buffer_t *buffer 
         state->player.x = state->player.y = 250;
         state->player.w = state->player.h = 100;
         state->offset = 10;
-        state->mesh = (mesh_t *)((char *)game_memory->memory + sizeof(game_state_t));
-        memset(state->mesh, 0, sizeof(*state->mesh));
-        load_obj_file_data(state->mesh, "../assets/f22.obj");
+        state->mesh = ( mesh_t * ) ( ( char * ) game_memory->memory + sizeof( game_state_t ) );
+        memset( state->mesh, 0, sizeof( *state->mesh ) );
+        load_obj_file_data( state->mesh, "../assets/f22.obj" );
         game_memory->is_initialized = true;
     }
 
-    update( state, buffer );
+    update( state, input, buffer );
     render( state, buffer );
 }

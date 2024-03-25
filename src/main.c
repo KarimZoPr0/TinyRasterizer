@@ -1,12 +1,8 @@
 #include "../game/game.h"
-
-
-
+#include "../game/input.c"
 #include "Windows.h"
 
-
-typedef void(*game_update_and_render_func)(game_memory_t *game_memory, game_color_buffer_t *buffer);
-
+typedef void(*game_update_and_render_func)(game_memory_t *game_memory, game_input_t *input, game_color_buffer_t *buffer);
 
 global int window_width;
 global int window_height;
@@ -15,6 +11,7 @@ global SDL_Window *window;
 global SDL_Renderer *renderer;
 global SDL_Texture *color_buffer_texture;
 global uint32_t *color_buffer;
+global game_input_t game_input;
 
 typedef struct win32_game_code win32_game_code;
 struct win32_game_code
@@ -162,7 +159,7 @@ int main( )
             game_color_buffer.memory = color_buffer;
             game_color_buffer.width = window_width;
             game_color_buffer.height = window_height;
-            game_code.update_and_render(&game_memory, &game_color_buffer);
+            game_code.update_and_render(&game_memory, &game_input, &game_color_buffer);
         }
 
         render_color_buffer();
@@ -239,9 +236,6 @@ void process_input() {
             case SDL_QUIT:
                 is_running = false;
                 break;
-            case SDL_KEYDOWN:
-                if (event.key.keysym.sym == SDLK_ESCAPE) is_running = false;
-                break;
             case SDL_WINDOWEVENT:
                 switch (event.window.event) {
                     case SDL_WINDOWEVENT_RESIZED:
@@ -263,6 +257,13 @@ void process_input() {
                         SDL_SetWindowOpacity(window, 0.5f);
                         break;
                 }
+                break;
+            case SDL_KEYDOWN:
+                if (event.key.keysym.sym == SDLK_ESCAPE) is_running = false;
+                doKeyDown(&event.key,&game_input);
+                break;
+            case SDL_KEYUP:
+                doKeyUp(&event.key,&game_input);
                 break;
         }
     }

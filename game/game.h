@@ -4,7 +4,6 @@
 
 #ifndef INC_3D_GRAPHICS_GAME_H
 #define INC_3D_GRAPHICS_GAME_H
-
 #define SDL_MAIN_HANDLED
 #include "SDL.h"
 #include "stdbool.h"
@@ -66,6 +65,15 @@ struct game_state_t
     mesh_t *mesh;
 };
 
-root_function void game_update_and_render( game_memory_t *game_memory, game_color_buffer_t *buffer);
+typedef struct game_input_t game_input_t;
+struct game_input_t
+{
+    int up;
+    int down;
+    int left;
+    int right;
+};
+
+root_function void game_update_and_render( game_memory_t *game_memory, game_input_t *input, game_color_buffer_t *buffer);
 
 #endif //INC_3D_GRAPHICS_GAME_H
