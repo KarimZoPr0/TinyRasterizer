@@ -5,7 +5,6 @@ Working on strengthening my understanding in 3D Graphics.
 
 ## Features
 
-- Linear transformation
 - Triangles and vertices
 - Obj files
 - Hot reloading (Windows only)
