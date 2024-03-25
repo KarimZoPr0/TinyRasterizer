@@ -4,8 +4,6 @@
 
 #include "../include/display.h"
 
-#define SDL_MAIN_HANDLED
-#include "SDL.h"
 
 void D_Grid2D( game_color_buffer_t *buffer )
 {
@@ -66,7 +64,3 @@ void D_Rect2D( game_color_buffer_t *buffer, int x, int y, int width, int height,
         }
     }
 }
-
-
-
-

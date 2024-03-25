@@ -8,6 +8,7 @@
 #define SDL_MAIN_HANDLED
 #include "SDL.h"
 #include "stdbool.h"
+#include "../include/mesh.h"
 
 #ifdef __cplusplus
 #define root_function extern "C" __declspec(dllexport)
@@ -31,7 +32,6 @@ typedef S64      B64;
 typedef float    F32;
 typedef double   F64;
 
-#define internal static
 #define local_persist static
 #define function static
 #define global static

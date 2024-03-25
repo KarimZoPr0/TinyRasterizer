@@ -1,27 +1,20 @@
-#include "../include/vector.h"
-#include "../include/mesh.h"
 #include "../game/game.h"
-#include "stdbool.h"
 
-#include "../game/array.c"
-#include "../game/mesh.c"
-#include "../game/triangle.c"
-#include "../game/vector.c"
-#include "../game/display.c"
+
 
 #include "Windows.h"
 
 
-typedef void(*GameUpdateAndRender)(game_memory_t *game_memory, game_color_buffer_t *buffer);
+typedef void(*game_update_and_render_func)(game_memory_t *game_memory, game_color_buffer_t *buffer);
 
 
-internal int window_width;
-internal int window_height;
-internal bool is_running = false;
-internal SDL_Window *window;
-internal SDL_Renderer *renderer;
-internal SDL_Texture *color_buffer_texture;
-internal uint32_t *color_buffer;
+global int window_width;
+global int window_height;
+global bool is_running = false;
+global SDL_Window *window;
+global SDL_Renderer *renderer;
+global SDL_Texture *color_buffer_texture;
+global uint32_t *color_buffer;
 
 typedef struct win32_game_code win32_game_code;
 struct win32_game_code
@@ -29,7 +22,7 @@ struct win32_game_code
     HMODULE game_dll;
     FILETIME last_write_time;
 
-    GameUpdateAndRender update_and_render;
+    game_update_and_render_func update_and_render;
 
     bool is_valid;
 };
@@ -85,7 +78,7 @@ win32_game_code load_game_code(char *source_dll_name, char *temp_dll_name)
         game_code.game_dll = LoadLibraryA(temp_dll_name);
         if(game_code.game_dll)
         {
-            game_code.update_and_render = (GameUpdateAndRender ) GetProcAddress(game_code.game_dll,"game_update_and_render");
+            game_code.update_and_render = (game_update_and_render_func ) GetProcAddress(game_code.game_dll,"game_update_and_render");
             game_code.last_write_time = source_last_write_time;
             game_code.is_valid = (game_code.update_and_render) != NULL;
         }
@@ -95,7 +88,7 @@ win32_game_code load_game_code(char *source_dll_name, char *temp_dll_name)
         game_code.game_dll = LoadLibraryA(temp_dll_name);
         if(game_code.game_dll)
         {
-            game_code.update_and_render = (GameUpdateAndRender ) GetProcAddress(game_code.game_dll,"game_update_and_render");
+            game_code.update_and_render = (game_update_and_render_func ) GetProcAddress(game_code.game_dll,"game_update_and_render");
             game_code.last_write_time = source_last_write_time;
             game_code.is_valid = (game_code.update_and_render) != NULL;
         }
