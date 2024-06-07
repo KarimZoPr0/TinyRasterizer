@@ -2,6 +2,17 @@
 #include "../game/input.c"
 #include "Windows.h"
 
+#define FPS 60
+#define FRAME_TARGET_TIME (1000/FPS)
+
+typedef enum
+{
+    MODE_NORMAL,
+    MODE_RECORD,
+    MODE_PLAYBACK,
+    MODE_MAX
+}engine_mode_t;
+
 typedef void(*game_update_and_render_func)(game_memory_t *game_memory, game_input_t *input, game_color_buffer_t *buffer);
 
 global int window_width;
@@ -13,6 +24,14 @@ global SDL_Texture *color_buffer_texture;
 global uint32_t *color_buffer;
 global game_input_t game_input;
 
+global engine_mode_t engine_mode = MODE_NORMAL;
+global game_input_t *recorded_inputs;
+global int recorded_input_count;
+global int recorded_input_index;
+global game_state_t saved_state;
+
+global game_memory_t game_memory;
+
 typedef struct win32_game_code win32_game_code;
 struct win32_game_code
 {
@@ -23,7 +42,6 @@ struct win32_game_code
 
     bool is_valid;
 };
-
 
 void render_color_buffer(  )
 {
@@ -129,7 +147,6 @@ int main( )
     win32_game_code game_code = load_game_code(source_dll, temp_dll);
 
 
-    game_memory_t game_memory;
     memset(&game_memory, 0, sizeof(game_memory));
     game_memory.size = Megabytes(64);
     game_memory.memory = malloc(game_memory.size);
@@ -148,8 +165,19 @@ int main( )
         {
             unload_game_code(&game_code);
             game_code = load_game_code(source_dll, temp_dll);
-            printf("Hot reloaded!\n");
+            printf("Hot reloaded\n");
         }
+
+        local_persist Uint32 previous_frame_time = 0;
+        {
+            U32 time_to_wait = FRAME_TARGET_TIME - ( SDL_GetTicks( ) - previous_frame_time );
+            if( time_to_wait > 0 && time_to_wait <= FRAME_TARGET_TIME )
+            {
+                SDL_Delay( time_to_wait );
+            }
+            previous_frame_time = SDL_GetTicks( );
+        }
+
 
         process_input(  );
 
@@ -229,51 +257,116 @@ void setup(   )
     );
 }
 
+
+
+void toggleEngineMode()
+{
+    switch( engine_mode % MODE_MAX )
+    {
+        case MODE_NORMAL:
+            recorded_inputs = malloc(sizeof(game_input_t ) * Megabytes(1));
+            memcpy(&saved_state, (game_state_t*)game_memory.memory, sizeof(game_state_t ));
+            break;
+        case MODE_RECORD:
+            memcpy((game_state_t*)game_memory.memory, &saved_state, sizeof(game_state_t ));
+            break;
+        case MODE_PLAYBACK:
+            recorded_input_count = 0;
+            recorded_input_index = 0;
+            memset(&game_input, 0, sizeof(game_input_t));
+            break;
+    }
+
+    engine_mode = ( engine_mode + 1 ) % MODE_MAX;
+}
+
+void processEventIntoGameInput(SDL_Event *event, game_input_t *input) {
+    switch (event->type) {
+        case SDL_KEYDOWN:
+            doKeyDown(&event->key, input);
+            break;
+        case SDL_KEYUP:
+            doKeyUp(&event->key, input);
+            break;
+    }
+}
+
 void process_input() {
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
-        switch (event.type) {
-            case SDL_QUIT:
-                is_running = false;
-                break;
-            case SDL_WINDOWEVENT:
-                switch (event.window.event) {
-                    case SDL_WINDOWEVENT_RESIZED:
-                        window_width = event.window.data1;
-                        window_height = event.window.data2;
+        // Directly handle events without resetting new_input
+        if(engine_mode == MODE_NORMAL || engine_mode == MODE_RECORD)
+        {
+            processEventIntoGameInput(&event, &game_input);
+        }
 
-                        // Reallocate the color memory to match the new size
-                        free(color_buffer);
-                        color_buffer = (uint32_t *)malloc(sizeof(uint32_t) * window_width * window_height);
+        if(event.type == SDL_KEYDOWN)
+        {
+            if(event.key.repeat == 0 && event.key.keysym.scancode == SDL_SCANCODE_L)
+            {
+                toggleEngineMode();
+            }
+        }
 
-                        // Recreate the texture with the new dimensions
-                        SDL_DestroyTexture(color_buffer_texture);
-                        color_buffer_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, window_width, window_height);
-                        break;
-                    case SDL_WINDOWEVENT_FOCUS_GAINED:
-                        SDL_SetWindowOpacity(window, 1.0f);
-                        break;
-                    case SDL_WINDOWEVENT_FOCUS_LOST:
-                        SDL_SetWindowOpacity(window, 0.5f);
-                        break;
-                }
+        if (event.type == SDL_QUIT) {
+            is_running = false;
+        }
+
+        switch( event.window.event )
+        {
+            case SDL_WINDOWEVENT_RESIZED:
+                window_width = event.window.data1;
+                window_height = event.window.data2;
+
+                // Reallocate the color memory to match the new size
+                free( color_buffer );
+                color_buffer = ( uint32_t * ) malloc( sizeof( uint32_t ) * window_width * window_height );
+
+                // Recreate the texture with the new dimensions
+                SDL_DestroyTexture( color_buffer_texture );
+                color_buffer_texture = SDL_CreateTexture( renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING,
+                                                          window_width, window_height );
                 break;
-            case SDL_KEYDOWN:
-                if (event.key.keysym.sym == SDLK_ESCAPE) is_running = false;
-                doKeyDown(&event.key,&game_input);
+            case SDL_WINDOWEVENT_FOCUS_GAINED:
+                SDL_SetWindowOpacity( window, 1.0f );
                 break;
-            case SDL_KEYUP:
-                doKeyUp(&event.key,&game_input);
+            case SDL_WINDOWEVENT_FOCUS_LOST:
+                SDL_SetWindowOpacity( window, 0.5f );
                 break;
+        }
+    }
+
+    if(engine_mode == MODE_RECORD)
+    {
+        if(recorded_input_count < Megabytes(1))
+        {
+            recorded_inputs[recorded_input_count++] = game_input;
+        }
+    }
+
+    if(engine_mode == MODE_PLAYBACK)
+    {
+        if(recorded_input_index < recorded_input_count)
+        {
+            game_input = recorded_inputs[recorded_input_index++];
+        }
+        else if(recorded_input_index >= recorded_input_count)
+        {
+            recorded_input_index = 0;
+            memcpy((game_state_t*)game_memory.memory, &saved_state, sizeof(game_state_t ));
         }
     }
 }
 
-
 void free_resources(  )
 {
     free( color_buffer );
+    if (recorded_inputs != NULL) {
+        free(recorded_inputs);
+        recorded_inputs = NULL;
+    }
 }
+
 
 void destroy_window(  )
 {

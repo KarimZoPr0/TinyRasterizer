@@ -16,7 +16,7 @@
 
 global vec3_t camera_position = { 0, 0, -100 };
 global vec3_t mesh_rotation = { 0, 0, 0 };
-global float fov_factor = 600;
+global float fov_factor = 200;
 global triangle_t *triangles_to_render = NULL;
 
 vec2_t project( vec3_t point )
@@ -41,8 +41,9 @@ update( game_state_t *state, game_input_t *input, game_color_buffer_t *buffer )
         previous_frame_time = SDL_GetTicks( );
     }
 
+#if 0
     triangles_to_render = NULL;
-    state->mesh->rotation.x = state->mesh->rotation.y = state->mesh->rotation.z += 0.01f;
+    state->mesh->rotation.x = state->mesh->rotation.y = state->mesh->rotation.z += 0.02f;
 
     // Loop all triangle faces of our mesh
     int num_faces = array_length( state->mesh->faces );
@@ -86,7 +87,7 @@ update( game_state_t *state, game_input_t *input, game_color_buffer_t *buffer )
         // Save the projected triangle in the array of triangles to render
         array_push( triangles_to_render, projected_triangle );
     }
-
+#else
     if(input->up == 1)
     {
         state->player.y -= state->offset;
@@ -107,6 +108,7 @@ update( game_state_t *state, game_input_t *input, game_color_buffer_t *buffer )
 
     state->player.x = SDL_clamp(state->player.x, 0, buffer->width - 50);
     state->player.y = SDL_clamp(state->player.y, 0, buffer->height - 50);
+#endif
 }
 
 function void
@@ -114,6 +116,7 @@ render( game_state_t *state, game_color_buffer_t *buffer )
 {
     D_Grid2D( buffer );
 
+#if 0
     int num_triangles = array_length( triangles_to_render );
 
     for( int i = 0; i < num_triangles; ++i )
@@ -128,16 +131,15 @@ render( game_state_t *state, game_color_buffer_t *buffer )
                 ( int ) triangle.points[ 0 ].x, ( int ) triangle.points[ 0 ].y,
                 ( int ) triangle.points[ 1 ].x, ( int ) triangle.points[ 1 ].y,
                 ( int ) triangle.points[ 2 ].x, ( int ) triangle.points[ 2 ].y,
-                0xFF00FFFF
+                0xAAABFFAF
         );
     }
 
     array_free( triangles_to_render );
 
+#else
     D_Rect2D( buffer, state->player.x, state->player.y, state->player.w, state->player.h, 0xFF00FF00 );
-    return;
-    D_Rect2D( buffer, 1000, 700, 100, 100, 0xFF00FF00 );
-    D_Rect2D( buffer, 500, 500, 100, 100, 0xFF00FFFF );
+#endif
 }
 
 
