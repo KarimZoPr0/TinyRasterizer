@@ -14,6 +14,8 @@
 #include "vector.c"
 #include "input.c"
 
+#define SHOW_3D 0
+
 global vec3_t camera_position = { 0, 0, -100 };
 global vec3_t mesh_rotation = { 0, 0, 0 };
 global float fov_factor = 200;
@@ -41,7 +43,7 @@ update( game_state_t *state, game_input_t *input, game_color_buffer_t *buffer )
         previous_frame_time = SDL_GetTicks( );
     }
 
-#if 0
+#if SHOW_3D
     triangles_to_render = NULL;
     state->mesh->rotation.x = state->mesh->rotation.y = state->mesh->rotation.z += 0.02f;
 
@@ -106,8 +108,8 @@ update( game_state_t *state, game_input_t *input, game_color_buffer_t *buffer )
         state->player.x -= state->offset;
     }
 
-    state->player.x = SDL_clamp(state->player.x, 0, buffer->width - 50);
-    state->player.y = SDL_clamp(state->player.y, 0, buffer->height - 50);
+    state->player.x = SDL_clamp(state->player.x, 0, buffer->width - state->player.w);
+    state->player.y = SDL_clamp(state->player.y, 0, buffer->height - state->player.h);
 #endif
 }
 
@@ -116,7 +118,7 @@ render( game_state_t *state, game_color_buffer_t *buffer )
 {
     D_Grid2D( buffer );
 
-#if 0
+#if SHOW_3D
     int num_triangles = array_length( triangles_to_render );
 
     for( int i = 0; i < num_triangles; ++i )
@@ -131,14 +133,14 @@ render( game_state_t *state, game_color_buffer_t *buffer )
                 ( int ) triangle.points[ 0 ].x, ( int ) triangle.points[ 0 ].y,
                 ( int ) triangle.points[ 1 ].x, ( int ) triangle.points[ 1 ].y,
                 ( int ) triangle.points[ 2 ].x, ( int ) triangle.points[ 2 ].y,
-                0xAAABFFAF
+                0x00AFFFFF
         );
     }
 
     array_free( triangles_to_render );
 
 #else
-    D_Rect2D( buffer, state->player.x, state->player.y, state->player.w, state->player.h, 0xFF00FF00 );
+    D_Rect2D( buffer, state->player.x, state->player.y, state->player.w, state->player.h, 0xFFFBBFAA );
 #endif
 }
 
