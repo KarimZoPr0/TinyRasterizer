@@ -1,6 +1,12 @@
-#include "../game/game.h"
+#define SDL_MAIN_HANDLED
+#include "SDL.h"
+#include "windows.h"
+
+#include "../include/base/base_inc.h"
+#include "../include/mesh.h"
+#include "../include/game.h"
 #include "../game/input.c"
-#include "Windows.h"
+
 
 #define FPS 60
 #define FRAME_TARGET_TIME (1000/FPS)
@@ -15,19 +21,19 @@ typedef enum
 
 typedef void(*game_update_and_render_func)(game_memory_t *game_memory, game_input_t *input, game_color_buffer_t *buffer);
 
-global int window_width;
-global int window_height;
+global U32 window_width;
+global U32 window_height;
 global bool is_running = false;
 global SDL_Window *window;
 global SDL_Renderer *renderer;
 global SDL_Texture *color_buffer_texture;
-global uint32_t *color_buffer;
+global U32 *color_buffer;
 global game_input_t game_input;
 
 global engine_mode_t engine_mode = MODE_NORMAL;
 global game_input_t *recorded_inputs;
-global int recorded_input_count;
-global int recorded_input_index;
+global U32 recorded_input_count;
+global U32 recorded_input_index;
 global game_state_t saved_state;
 
 global game_memory_t game_memory;
@@ -49,14 +55,14 @@ void render_color_buffer(  )
             color_buffer_texture,
             NULL,
             color_buffer,
-            ( int ) ( window_width * sizeof( uint32_t ) )
+            ( int ) ( window_width * sizeof( U32 ) )
     );
 
 
     SDL_RenderCopy( renderer, color_buffer_texture, NULL, NULL );
 }
 
-void clear_color_buffer( uint32_t color )
+void clear_color_buffer( U32 color )
 {
     for( int y = 0; y < window_height; ++y )
     {
@@ -142,8 +148,8 @@ int main( )
 {
     is_running = initialize_window( );
 
-    char *source_dll = "game.dll";
-    char *temp_dll = "game_dll.dll";
+    char *source_dll = "libgame.dll";
+    char *temp_dll = "libgame_dll.dll";
     win32_game_code game_code = load_game_code(source_dll, temp_dll);
 
 
@@ -168,7 +174,7 @@ int main( )
             printf("Hot reloaded\n");
         }
 
-        local_persist Uint32 previous_frame_time = 0;
+        local_persist U32 previous_frame_time = 0;
         {
             U32 time_to_wait = FRAME_TARGET_TIME - ( SDL_GetTicks( ) - previous_frame_time );
             if( time_to_wait > 0 && time_to_wait <= FRAME_TARGET_TIME )
@@ -177,7 +183,6 @@ int main( )
             }
             previous_frame_time = SDL_GetTicks( );
         }
-
 
         process_input(  );
 
@@ -189,6 +194,11 @@ int main( )
             game_color_buffer.height = window_height;
             game_code.update_and_render(&game_memory, &game_input, &game_color_buffer);
         }
+
+        if (!game_code.is_valid) {
+            printf("Error: game_update_and_render function not found in DLL.\n");
+        }
+
 
         render_color_buffer();
         clear_color_buffer(0xFF000000);
@@ -246,7 +256,7 @@ bool initialize_window(  )
 
 void setup(   )
 {
-    color_buffer = ( uint32_t * ) malloc( sizeof( uint32_t ) * window_width * window_height );
+    color_buffer = ( U32 * ) malloc( sizeof( U32 ) * window_width * window_height );
 
     color_buffer_texture = SDL_CreateTexture(
             renderer,
@@ -265,10 +275,10 @@ void toggleEngineMode()
     {
         case MODE_NORMAL:
             recorded_inputs = malloc(sizeof(game_input_t ) * Megabytes(1));
-            memcpy(&saved_state, (game_state_t*)game_memory.memory, sizeof(game_state_t ));
+            memcpy(&saved_state, game_memory.memory, sizeof(game_state_t ));
             break;
         case MODE_RECORD:
-            memcpy((game_state_t*)game_memory.memory, &saved_state, sizeof(game_state_t ));
+            memcpy(game_memory.memory, &saved_state, sizeof(game_state_t ));
             break;
         case MODE_PLAYBACK:
             recorded_input_count = 0;
@@ -288,6 +298,7 @@ void processEventIntoGameInput(SDL_Event *event, game_input_t *input) {
         case SDL_KEYUP:
             doKeyUp(&event->key, input);
             break;
+        default: ;
     }
 }
 
@@ -320,7 +331,7 @@ void process_input() {
 
                 // Reallocate the color memory to match the new size
                 free( color_buffer );
-                color_buffer = ( uint32_t * ) malloc( sizeof( uint32_t ) * window_width * window_height );
+                color_buffer = ( U32 * ) malloc( sizeof( U32 ) * window_width * window_height );
 
                 // Recreate the texture with the new dimensions
                 SDL_DestroyTexture( color_buffer_texture );
@@ -333,6 +344,7 @@ void process_input() {
             case SDL_WINDOWEVENT_FOCUS_LOST:
                 SDL_SetWindowOpacity( window, 0.5f );
                 break;
+            default: ;
         }
     }
 
@@ -353,7 +365,7 @@ void process_input() {
         else if(recorded_input_index >= recorded_input_count)
         {
             recorded_input_index = 0;
-            memcpy((game_state_t*)game_memory.memory, &saved_state, sizeof(game_state_t ));
+            memcpy(game_memory.memory, &saved_state, sizeof(game_state_t ));
         }
     }
 }

@@ -5,8 +5,6 @@
 #ifndef INC_3D_GRAPHICS_MESH_H
 #define INC_3D_GRAPHICS_MESH_H
 
-#include "vector.h"
-#include "triangle.h"
 
 #define N_MESH_VERTICES 8
 extern vec3_t cube_vertices[N_MESH_VERTICES];

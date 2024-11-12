@@ -2,7 +2,6 @@
 // Created by Karim on 2023-10-08.
 //
 
-#include "../include/array.h"
 
 vec3_t cube_vertices[N_MESH_VERTICES] = {
         { .x = -1, .y = -1, .z = -1 }, // 1
