@@ -11,6 +11,9 @@
 #include "stdio.h"
 #include "stdbool.h"
 #include "math.h"
+#include <assert.h>
+#include <stdalign.h>
+
 
 //~ karim: Base-Types
 
@@ -38,6 +41,10 @@ typedef double   F64;
 #define Megabytes(n)  (n << 20)
 #define Gigabytes(n)  (((U64)n) << 30)
 #define Terabytes(n)  (((U64)n) << 40)
+
+#define Swap(T,a,b) do{T t__ = a; a = b; b = t__;}while(0)
+
+#define ARGB(a, r, g, b) ((U32)((a << 24) | (r << 16) | (g << 8) | (b)))
 
 
 #endif //BASE_CORE_H
