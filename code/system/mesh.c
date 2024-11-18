@@ -2,7 +2,6 @@
 // Created by Karim on 2023-10-08.
 //
 
-
 vec3_t cube_vertices[N_MESH_VERTICES] = {
         { .x = -1, .y = -1, .z = -1 }, // 1
         { .x = -1, .y =  1, .z = -1 }, // 2
@@ -36,15 +35,15 @@ face_t cube_faces[N_MESH_FACES] = {
         { .a = 6, .b = 1, .c = 4 }
 };
 
-void load_cube_mesh_data( mesh_t *mesh )
+void load_cube_mesh_data( Arena *arena, mesh_t *mesh )
 {
-    for( int i = 0; i < N_MESH_VERTICES; ++i )
+    for( U32 i = 0; i < N_MESH_VERTICES; ++i )
     {
         vec3_t cube_vertex = cube_vertices[ i ];
         array_push( mesh->vertices, cube_vertex );
     }
 
-    for( int i = 0; i < N_MESH_FACES; ++i )
+    for( U32 i = 0; i < N_MESH_FACES; ++i )
     {
         face_t cube_face = cube_faces[ i ];
         array_push( mesh->faces, cube_face );
@@ -66,9 +65,9 @@ void load_obj_file_data( mesh_t *mesh, char *filename )
 
         if(strncmp(line, "f ", 2) == 0)
         {
-            int vertex_indices[3];
-            int texture_indices[3];
-            int normal_indices[3];
+            U32 vertex_indices[3];
+            U32 texture_indices[3];
+            U32 normal_indices[3];
             sscanf_s(line, "f %d/%d/%d %d/%d/%d %d/%d/%d",
                    &vertex_indices[0], &texture_indices[0], &normal_indices[0],
                    &vertex_indices[1], &texture_indices[1], &normal_indices[1],
