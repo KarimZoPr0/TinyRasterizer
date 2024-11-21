@@ -8,9 +8,5 @@
 #include "base_core.h"
 #include "base_math.h"
 #include "base_arena.h"
-#include "../system/mesh.h"
-#include "../system/array.h"
-#include "../game/game.h"
-#include "../system/draw.h"
 
 #endif //BASE_INC_H

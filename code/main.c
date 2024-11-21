@@ -1,8 +1,11 @@
 #define SDL_MAIN_HANDLED
 
+
+
 #include "SDL.h"
 #include "base/base_inc.h"
 #include "os/os_inc.h"
+#include "system/system_inc.h"
 
 #include "system/input.h"
 #include "game/game.h"
@@ -10,16 +13,12 @@
 
 #include "base/base_inc.c"
 #include "os/os_inc.c"
+#include "system/system_inc.c"
 
 #define FPS 60
 #define FRAME_TARGET_TIME (1000/FPS)
-#define INPUT_SAMPLING_RATE 60
 #define RECORDING_DURATION_SECONDS (10 * 60)
-#define MAX_INPUT_RECORDS (INPUT_SAMPLING_RATE * RECORDING_DURATION_SECONDS)
-
-void process_input();
-bool initialize_window();
-void destroy_window();
+#define MAX_INPUT_RECORDS (FPS * RECORDING_DURATION_SECONDS)
 
 typedef enum
 {
@@ -29,11 +28,9 @@ typedef enum
     MODE_MAX
 } engine_mode_t;
 
-
 typedef void (*game_update_and_render_func)(app_t* app);
 
 typedef struct win32_game_code win32_game_code;
-
 struct win32_game_code
 {
     HMODULE game_dll;
@@ -43,6 +40,10 @@ struct win32_game_code
 
     bool is_valid;
 };
+
+void process_input();
+bool initialize_window();
+void destroy_window();
 
 global U32 window_width;
 global U32 window_height;
@@ -73,18 +74,6 @@ void render_color_buffer()
     SDL_RenderCopy(renderer, color_buffer_texture, NULL, NULL);
 }
 
-
-FILETIME get_last_write_time(char* filename)
-{
-    FILETIME LastWriteTime = {0};
-    WIN32_FILE_ATTRIBUTE_DATA data;
-    if (GetFileAttributesEx(filename, GetFileExInfoStandard, &data))
-    {
-        LastWriteTime = data.ftLastWriteTime;
-    }
-
-    return LastWriteTime;
-}
 
 win32_game_code load_game_code(char* source_dll_name, char* temp_dll_name)
 {
@@ -125,7 +114,6 @@ win32_game_code load_game_code(char* source_dll_name, char* temp_dll_name)
     return game_code;
 }
 
-
 void unload_game_code(win32_game_code* game_code)
 {
     if (game_code->game_dll)
@@ -147,8 +135,8 @@ int main()
     win32_game_code game_code = load_game_code(source_dll, temp_dll);
 
 
-    Arena arena = arena_alloc(Gigabytes(64));
-    Arena frame_arena = arena_alloc(Gigabytes(64));
+    arena_t arena = arena_alloc(Gigabytes(64));
+    arena_t frame_arena = arena_alloc(Gigabytes(64));
 
     app = push_array(&arena, app_t, 1);
     app->arena = arena;
@@ -204,8 +192,8 @@ int main()
             printf("Error: game_update_and_render function not found in DLL.\n");
         }
 
-
         render_color_buffer();
+
         clear_color_buffer(app->color_buffer, window_width, window_height, 0xFF000000);
 
         SDL_RenderPresent(renderer);
@@ -215,7 +203,6 @@ int main()
 
     destroy_window();
 }
-
 
 bool initialize_window()
 {
@@ -236,7 +223,6 @@ bool initialize_window()
         window_height,
         SDL_WINDOW_ALWAYS_ON_TOP | SDL_WINDOW_RESIZABLE
     );
-
 
     if (!window)
     {
@@ -277,7 +263,6 @@ void toggleEngineMode()
         break;
     }
 }
-
 
 void processEventIntoGameInput(SDL_Event* event)
 {

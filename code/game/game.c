@@ -4,9 +4,16 @@
 
 #include "../base/base_inc.h"
 #include "../os/os_inc.h"
+#include "../system/system_inc.h"
+#include "../game/game.h"
+
 
 #include "../base/base_inc.c"
 #include "../os/os_inc.c"
+#include "../system/system_inc.c"
+
+#define STB_TRUETYPE_IMPLEMENTATION
+#include "../external/stb_truetype.h"
 
 #define SHOW_3D 1
 root_function void
@@ -23,6 +30,7 @@ game_update_and_render(app_t* app)
     U32 keyboard[KEY_COUNT];
     memcpy(keyboard, app->input->keyboard, KEY_COUNT * sizeof(U32));
 
+
     /////////////////////////////
     //- karim: initialization
     //
@@ -34,8 +42,15 @@ game_update_and_render(app_t* app)
             state->offset = 10;
 
             // Initialize the mesh
-            state->mesh = push_array(&app->arena, mesh_t, 1);
-            load_obj_file_data(state->mesh, "../assets/cube.obj");
+            //state->mesh = push_array(&app->arena, mesh_t, 1);
+            //load_cube_mesh_data(&app->mesh_arena, state->mesh);
+            // load_obj_file_data(&app->arena, state->mesh, "../assets/cube.obj");
+            state->mesh_table = push_array(&app->arena, mesh_table_t, 1);
+            state->mesh_table->slot_count = 256;
+            state->mesh_table->slots = push_array(&app->arena, mesh_slot_t, state->mesh_table->slot_count);
+
+            state->nil_mesh = push_array(&app->arena, mesh_t, 1);
+            init_nil_mesh(&app->arena, state->nil_mesh);
 
             app->is_initialized = true;
             app->render_mode = RENDER_WIRE;
@@ -74,23 +89,26 @@ game_update_and_render(app_t* app)
             app->cull_mode = CULL_NONE;
         }
 
+        nil_mesh = state->nil_mesh;
+        state->mesh = mesh_from_key(&app->arena, state->mesh_table, "../assets/cube.obj");
+
         triangle_count = 0;
 
-        state->mesh->rotation.x += speed;
-        state->mesh->rotation.y += speed;
-        state->mesh->rotation.z += speed;
+        state->rotation.x += speed;
+        state->rotation.y += speed;
+        state->rotation.z += speed;
 
-        const U32 num_faces = array_length(state->mesh->faces);
+        const U32 num_faces = state->mesh->face_array.count;
         triangles_to_render = push_array(&app->frame_arena, triangle_t, num_faces);
 
         // Loop over all triangle faces of the mesh
         for (U32 i = 0; i < num_faces; ++i)
         {
-            face_t mesh_face = state->mesh->faces[i];
+            face_t mesh_face = state->mesh->face_array.v[i];
             vec3_t face_vertices[3] = {
-                state->mesh->vertices[mesh_face.a - 1],
-                state->mesh->vertices[mesh_face.b - 1],
-                state->mesh->vertices[mesh_face.c - 1]
+                state->mesh->vertex_array.v[mesh_face.a - 1],
+                state->mesh->vertex_array.v[mesh_face.b - 1],
+                state->mesh->vertex_array.v[mesh_face.c - 1]
             };
 
             triangle_t projected_triangle;
@@ -103,11 +121,10 @@ game_update_and_render(app_t* app)
                 vec3_t transformed_vertex = face_vertices[j];
 
                 // Rotate points
-                transformed_vertex = vec3_rotate_x(transformed_vertex, state->mesh->rotation.x);
-                transformed_vertex = vec3_rotate_y(transformed_vertex, state->mesh->rotation.y);
-                transformed_vertex = vec3_rotate_z(transformed_vertex, state->mesh->rotation.z);
+                transformed_vertex = vec3_rotate_x(transformed_vertex, state->rotation.x);
+                transformed_vertex = vec3_rotate_y(transformed_vertex, state->rotation.y);
+                transformed_vertex = vec3_rotate_z(transformed_vertex, state->rotation.z);
 
-                // Translate the vertex away from the camera
                 transformed_vertex.z += 5;
 
                 // Scale the transformed vertex
@@ -209,7 +226,7 @@ game_update_and_render(app_t* app)
                     (S32)triangle.points[0].x, (S32)triangle.points[0].y,
                     (S32)triangle.points[1].x, (S32)triangle.points[1].y,
                     (S32)triangle.points[2].x, (S32)triangle.points[2].y,
-                    0xFF07542A
+                    0xFF354E46
                 );
             }
 
@@ -222,15 +239,18 @@ game_update_and_render(app_t* app)
                     (S32)triangle.points[0].x, (S32)triangle.points[0].y,
                     (S32)triangle.points[1].x, (S32)triangle.points[1].y,
                     (S32)triangle.points[2].x, (S32)triangle.points[2].y,
-                    ARGB(255,255,255,255)
+                    ARGB(255, 255, 255, 255)
                 );
             }
 
             if (app->render_mode == RENDER_WIRE_VERTEX)
             {
-                draw_rect(buffer, (S32)triangle.points[0].x - 3, (S32)triangle.points[0].y - 3, 6, 6, ARGB(255,255,0,0));
-                draw_rect(buffer, (S32)triangle.points[1].x - 3, (S32)triangle.points[1].y - 3, 6, 6, ARGB(255,255,0,0));
-                draw_rect(buffer, (S32)triangle.points[2].x - 3, (S32)triangle.points[2].y - 3, 6, 6, ARGB(255,255,0,0));
+                draw_rect(buffer, (S32)triangle.points[0].x - 3, (S32)triangle.points[0].y - 3, 6, 6,
+                          ARGB(255, 255, 0, 0));
+                draw_rect(buffer, (S32)triangle.points[1].x - 3, (S32)triangle.points[1].y - 3, 6, 6,
+                          ARGB(255, 255, 0, 0));
+                draw_rect(buffer, (S32)triangle.points[2].x - 3, (S32)triangle.points[2].y - 3, 6, 6,
+                          ARGB(255, 255, 0, 0));
             }
         }
 #else

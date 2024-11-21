@@ -1,11 +1,12 @@
 //
-// Created by Abdik on 2024-11-13.
+// Created by Karim on 2024-11-13.
 //
-_Thread_local  Arena scratch_arenas[SCRATCH_ARENA_COUNT];
 
-Arena arena_alloc(U64 size)
+_Thread_local arena_t scratch_arenas[SCRATCH_ARENA_COUNT];
+
+arena_t arena_alloc(U64 size)
 {
-    Arena arena = {0};
+    arena_t arena = {0};
     arena.reserved_size = size;
     arena.memory = os_reserve(size);
     if (!arena.memory)
@@ -17,7 +18,7 @@ Arena arena_alloc(U64 size)
     return arena;
 }
 
-void* arena_push(Arena *arena, U64 size, U64 align)
+void* arena_push(arena_t* arena, U64 size, U64 align)
 {
     uintptr_t current = (uintptr_t)(arena->memory + arena->pos);
     uintptr_t aligned = (current + (align - 1)) & ~(align - 1);
@@ -28,8 +29,8 @@ void* arena_push(Arena *arena, U64 size, U64 align)
     {
         // Commit memory in 1MB blocks
         U64 page_size = Megabytes(1);
-        U64 commit_size = ((required_size - arena->committed_size) + (page_size -1)) & ~(page_size -1);
-        if(!os_commit(arena->memory + arena->committed_size, commit_size))
+        U64 commit_size = ((required_size - arena->committed_size) + (page_size - 1)) & ~(page_size - 1);
+        if (!os_commit(arena->memory + arena->committed_size, commit_size))
         {
             assert(0 && "Failed to commit memory");
             return NULL;
@@ -47,12 +48,12 @@ void* arena_push(Arena *arena, U64 size, U64 align)
     return (void*)aligned;
 }
 
-void arena_reset(Arena* arena)
+void arena_reset(arena_t* arena)
 {
     arena->pos = 0;
 }
 
-void arena_clear(Arena* arena)
+void arena_clear(arena_t* arena)
 {
     arena_reset(arena);
     if (arena->committed_size > 0)
@@ -62,49 +63,71 @@ void arena_clear(Arena* arena)
     }
 }
 
-void arena_free(Arena* arena)
+void arena_free(arena_t* arena)
 {
     if (arena->memory)
     {
         os_release(arena->memory, 0);
-        memset(arena, 0, sizeof(Arena));
+        memset(arena, 0, sizeof(arena_t));
     }
 }
 
-Temp temp_begin(Arena* arena)
+temp_t temp_begin(arena_t* arena)
 {
-    Temp temp;
+    temp_t temp;
     temp.arena = arena;
     temp.pos = arena->pos;
     return temp;
 }
 
-void temp_end(Temp temp)
+void temp_end(temp_t temp)
 {
     temp.arena->pos = temp.pos;
 }
 
-
-void initialize_scratch_arena() {
-    for (U32 i = 0; i < SCRATCH_ARENA_COUNT; ++i) {
-        scratch_arenas[i] = arena_alloc(SCRATCH_ARENA_SIZE);
-        scratch_arenas[i].in_use = false;
-    }
-}
-
-Arena* scratch_begin() {
-    for (U32 i = 0; i < SCRATCH_ARENA_COUNT; ++i) {
-        if (!scratch_arenas[i].in_use) {
-            scratch_arenas[i].in_use = true;
-            return &scratch_arenas[i];
+void initialize_scratch_arena()
+{
+    static B32 initialized = false;
+    if (!initialized)
+    {
+        for (U32 i = 0; i < SCRATCH_ARENA_COUNT; ++i)
+        {
+            scratch_arenas[i] = arena_alloc(Gigabytes(2));
+            scratch_arenas[i].in_use = false;
+            initialized = true;
         }
     }
-    assert(0 && "No available scratch arenas");
-    return NULL;
+
 }
 
-void scratch_end(Arena *arena) {
-    assert(arena->in_use && "Attempting to release a scratch arena that's not in use");
+arena_t *scratch_begin()
+{
+    local_persist B32 initialized = false;
+    if (!initialized)
+    {
+        for (U32 i = 0; i < SCRATCH_ARENA_COUNT; ++i)
+        {
+            scratch_arenas[i] = arena_alloc(Gigabytes(2));
+            scratch_arenas[i].in_use = false;
+            initialized = true;
+        }
+    }
+
+    arena_t *arena = {0};
+    for (U32 i = 0; i < SCRATCH_ARENA_COUNT; ++i)
+    {
+        if (!scratch_arenas[i].in_use)
+        {
+            scratch_arenas[i].in_use = true;
+            arena = &scratch_arenas[i];
+            break;
+        }
+    }
+    return arena;
+}
+
+void scratch_end(arena_t *arena)
+{
     arena_reset(arena);
     arena->in_use = false;
 }

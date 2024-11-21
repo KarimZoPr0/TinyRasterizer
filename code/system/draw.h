@@ -7,6 +7,14 @@
 #define FPS 60
 #define FRAME_TARGET_TIME (1000/FPS)
 
+typedef struct game_color_buffer_t game_color_buffer_t;
+struct game_color_buffer_t
+{
+    U32* memory;
+    U32 width;
+    U32 height;
+};
+
 void clear_color_buffer(game_color_buffer_t* buffer, U32 width, U32 height, U32 color);
 void draw_grid( game_color_buffer_t *buffer);
 void draw_pixel( game_color_buffer_t *buffer, S32 x, S32 y, U32 color);

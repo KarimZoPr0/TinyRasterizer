@@ -12,23 +12,6 @@
 #define root_function __declspec(dllexport)
 #endif
 
-typedef struct game_color_buffer_t game_color_buffer_t;
-
-struct game_color_buffer_t
-{
-    U32* memory;
-    U32 width;
-    U32 height;
-};
-
-typedef struct game_state_t game_state_t;
-struct game_state_t
-{
-    rect_t player;
-    S32 offset;
-    mesh_t* mesh;
-};
-
 typedef enum cull_mode cull_mode;
 enum cull_mode
 {
@@ -46,6 +29,7 @@ enum render_mode
 };
 
 typedef struct mouse_t mouse_t;
+
 struct mouse_t
 {
     S32 x;
@@ -53,7 +37,8 @@ struct mouse_t
     vec2_t scroll;
 };
 
-typedef enum {
+typedef enum
+{
     KEY_UNKNOWN = 0,
 
     KEY_A,
@@ -145,26 +130,37 @@ typedef enum {
 } KeyCode;
 
 typedef struct game_input_t game_input_t;
+
 struct game_input_t
 {
     U32 keyboard[KEY_COUNT];
     mouse_t mouse;
 };
 
+typedef struct game_state_t game_state_t;
+struct game_state_t
+{
+    rect_t player;
+    S32 offset;
+    mesh_t* mesh;
+    mesh_t *nil_mesh;
+    mesh_table_t* mesh_table;
+    vec3_t rotation;
+};
+
 
 typedef struct app_t app_t;
 struct app_t
 {
-    Arena arena;
-    Arena frame_arena;
+    arena_t arena;
+    arena_t frame_arena;
 
-    game_color_buffer_t *color_buffer;
-    game_state_t *game_state;
-    game_input_t *input;
+    game_color_buffer_t* color_buffer;
+    game_state_t* game_state;
+    game_input_t* input;
 
     cull_mode cull_mode;
     render_mode render_mode;
-
 
     B32 is_initialized;
 };

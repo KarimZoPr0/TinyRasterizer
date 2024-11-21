@@ -1,5 +1,5 @@
 //
-// Created by Abdik on 2024-11-18.
+// Created by Karim on 2024-11-18.
 //
 
 //- karim: basic
@@ -27,4 +27,16 @@ function void
 os_release(void *ptr, U64 size)
 {
     VirtualFree(ptr, 0, MEM_RELEASE);
+}
+
+FILETIME get_last_write_time(char* filename)
+{
+    FILETIME LastWriteTime = {0};
+    WIN32_FILE_ATTRIBUTE_DATA data;
+    if (GetFileAttributesEx(filename, GetFileExInfoStandard, &data))
+    {
+        LastWriteTime = data.ftLastWriteTime;
+    }
+
+    return LastWriteTime;
 }
