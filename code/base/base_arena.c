@@ -4,7 +4,7 @@
 
 _Thread_local arena_t scratch_arenas[SCRATCH_ARENA_COUNT];
 
-arena_t arena_alloc(U64 size)
+function arena_t arena_alloc(U64 size)
 {
     arena_t arena = {0};
     arena.reserved_size = size;
@@ -18,7 +18,7 @@ arena_t arena_alloc(U64 size)
     return arena;
 }
 
-void* arena_push(arena_t* arena, U64 size, U64 align)
+function void* arena_push(arena_t* arena, U64 size, U64 align)
 {
     uintptr_t current = (uintptr_t)(arena->memory + arena->pos);
     uintptr_t aligned = (current + (align - 1)) & ~(align - 1);
@@ -48,12 +48,12 @@ void* arena_push(arena_t* arena, U64 size, U64 align)
     return (void*)aligned;
 }
 
-void arena_reset(arena_t* arena)
+function void arena_reset(arena_t* arena)
 {
     arena->pos = 0;
 }
 
-void arena_clear(arena_t* arena)
+function void arena_clear(arena_t* arena)
 {
     arena_reset(arena);
     if (arena->committed_size > 0)
@@ -63,7 +63,7 @@ void arena_clear(arena_t* arena)
     }
 }
 
-void arena_free(arena_t* arena)
+function void arena_free(arena_t* arena)
 {
     if (arena->memory)
     {
@@ -80,12 +80,12 @@ temp_t temp_begin(arena_t* arena)
     return temp;
 }
 
-void temp_end(temp_t temp)
+function void temp_end(temp_t temp)
 {
     temp.arena->pos = temp.pos;
 }
 
-void initialize_scratch_arena()
+function void initialize_scratch_arena()
 {
     static B32 initialized = false;
     if (!initialized)
@@ -100,7 +100,7 @@ void initialize_scratch_arena()
 
 }
 
-arena_t *scratch_begin()
+function arena_t *scratch_begin()
 {
     local_persist B32 initialized = false;
     if (!initialized)
@@ -126,7 +126,7 @@ arena_t *scratch_begin()
     return arena;
 }
 
-void scratch_end(arena_t *arena)
+function void scratch_end(arena_t *arena)
 {
     arena_reset(arena);
     arena->in_use = false;

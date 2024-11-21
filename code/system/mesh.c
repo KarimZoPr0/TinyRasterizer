@@ -37,7 +37,7 @@ face_t cube_faces[N_MESH_FACES] = {
     {.a = 6, .b = 1, .c = 4}
 };
 
-void init_nil_mesh(arena_t* arena, mesh_t* mesh)
+function void init_nil_mesh(arena_t* arena, mesh_t* mesh)
 {
     vec3_t* vertices = push_array(arena, vec3_t, N_MESH_VERTICES);
     memcpy(vertices, cube_vertices, sizeof(cube_vertices));
@@ -51,7 +51,7 @@ void init_nil_mesh(arena_t* arena, mesh_t* mesh)
     mesh->face_array.count = N_MESH_FACES;
 }
 
-U64 hash_from_string(char* filename)
+function U64 hash_from_string(char* filename)
 {
     U64 result = 5435;
     for (U64 i = 0; i < strlen(filename); i++)
@@ -61,7 +61,23 @@ U64 hash_from_string(char* filename)
     return result;
 }
 
-mesh_t* mesh_from_key(arena_t* arena, mesh_table_t* table, char* filename)
+function vec3_t get_vertex_by_index(vertex_chunk_list_t* vertex_chunks, U64 idx)
+{
+    vec3_t vertex = {0};
+    U64 remaining = idx - 1;
+    for (vertex_chunk_node_t *n = vertex_chunks->first; n != 0; n = n->next)
+    {
+        if (remaining < n->cap)
+        {
+            vertex = n->v[remaining];
+            break;
+        }
+        remaining -= n->cap;
+    }
+    return vertex;
+}
+
+function mesh_t* mesh_from_key(arena_t* arena, mesh_table_t* table, char* filename)
 {
     arena_t* scratch_arena = scratch_begin();
 
@@ -75,7 +91,7 @@ mesh_t* mesh_from_key(arena_t* arena, mesh_table_t* table, char* filename)
 
     //- karim: find existing node in the table
     mesh_slot_t* slot = &table->slots[slot_idx];
-    mesh_node_t* existing_node = NULL;
+    mesh_node_t* existing_node = 0;
     for (mesh_node_t* n = slot->first; n != 0; n = n->next)
     {
         if (strcmp(n->v.filename, filename) == 0)
@@ -92,7 +108,6 @@ mesh_t* mesh_from_key(arena_t* arena, mesh_table_t* table, char* filename)
         if (CompareFileTime(&existing_node->v.last_write_time, &last_write_time) != 0)
         {
             file_changed = 1;
-            printf("Reloaded\n");
         }
     }
 
@@ -146,6 +161,7 @@ mesh_t* mesh_from_key(arena_t* arena, mesh_table_t* table, char* filename)
             }
         }
 
+        /*
         //- karim: copy vertex chunks -> array
         existing_mesh->vertex_array.count = existing_mesh->vertex_chunks.total_count;
         existing_mesh->vertex_array.v = push_array(arena, vec3_t, existing_mesh->vertex_array.count);
@@ -164,7 +180,7 @@ mesh_t* mesh_from_key(arena_t* arena, mesh_table_t* table, char* filename)
         {
             memcpy(existing_mesh->face_array.v + idx, n->v, sizeof(face_t) * n->count);
             idx += n->count;
-        }
+        }*/
 
         //- karim: update or insert the node
         if (!existing_node)

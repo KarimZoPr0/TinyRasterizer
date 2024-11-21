@@ -118,7 +118,8 @@ struct mesh_table_t
     U64 slot_count;
 };
 
-void init_nil_mesh(arena_t* arena, mesh_t* mesh);
-mesh_t* mesh_from_key(arena_t* arena, mesh_table_t* table, char* filename);
+function void init_nil_mesh(arena_t* arena, mesh_t* mesh);
+function vec3_t get_vertex_by_index(vertex_chunk_list_t* vertex_chunks, U64 idx);
+function mesh_t* mesh_from_key(arena_t* arena, mesh_table_t* table, char* filename);
 
 #endif //INC_3D_GRAPHICS_MESH_H

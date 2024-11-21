@@ -4,7 +4,7 @@
 
 extern app_t *app;
 
-KeyCode mapSDLScancodeToKeyCode(SDL_Scancode scancode)
+function KeyCode mapSDLScancodeToKeyCode(SDL_Scancode scancode)
 {
     switch (scancode)
     {
@@ -76,7 +76,7 @@ KeyCode mapSDLScancodeToKeyCode(SDL_Scancode scancode)
 
 #define MAX_KEYBOARD_KEYS 350
 
-void doKeyDown(SDL_KeyboardEvent* event)
+function void doKeyDown(SDL_KeyboardEvent* event)
 {
     if (event->repeat == 0 && event->keysym.scancode < MAX_KEYBOARD_KEYS)
     {
@@ -85,7 +85,7 @@ void doKeyDown(SDL_KeyboardEvent* event)
     }
 }
 
-void doKeyUp(SDL_KeyboardEvent* event)
+function void doKeyUp(SDL_KeyboardEvent* event)
 {
     if (event->repeat == 0 && event->keysym.scancode < MAX_KEYBOARD_KEYS)
     {

@@ -98,87 +98,90 @@ game_update_and_render(app_t* app)
         state->rotation.y += speed;
         state->rotation.z += speed;
 
-        const U32 num_faces = state->mesh->face_array.count;
+        const U32 num_faces = state->mesh->face_chunks.total_count;
         triangles_to_render = push_array(&app->frame_arena, triangle_t, num_faces);
 
         // Loop over all triangle faces of the mesh
-        for (U32 i = 0; i < num_faces; ++i)
+        for (face_chunk_node_t* face_chunk = state->mesh->face_chunks.first; face_chunk; face_chunk = face_chunk->next)
         {
-            face_t mesh_face = state->mesh->face_array.v[i];
-            vec3_t face_vertices[3] = {
-                state->mesh->vertex_array.v[mesh_face.a - 1],
-                state->mesh->vertex_array.v[mesh_face.b - 1],
-                state->mesh->vertex_array.v[mesh_face.c - 1]
-            };
-
-            triangle_t projected_triangle;
-
-            vec3_t transformed_vertices[3];
-
-            // Loop all three vertices of this current face and apply transformations
-            for (U32 j = 0; j < 3; ++j)
+            for (U64 i = 0; i < face_chunk->count; ++i)
             {
-                vec3_t transformed_vertex = face_vertices[j];
+                face_t mesh_face = face_chunk->v[i];
+                vec3_t face_vertices[3] = {
+                    get_vertex_by_index(&state->mesh->vertex_chunks, mesh_face.a),
+                    get_vertex_by_index(&state->mesh->vertex_chunks, mesh_face.b),
+                    get_vertex_by_index(&state->mesh->vertex_chunks, mesh_face.c),
+                };
 
-                // Rotate points
-                transformed_vertex = vec3_rotate_x(transformed_vertex, state->rotation.x);
-                transformed_vertex = vec3_rotate_y(transformed_vertex, state->rotation.y);
-                transformed_vertex = vec3_rotate_z(transformed_vertex, state->rotation.z);
+                triangle_t projected_triangle;
 
-                transformed_vertex.z += 5;
+                vec3_t transformed_vertices[3];
 
-                // Scale the transformed vertex
-                transformed_vertex.x *= fov_factor;
-                transformed_vertex.y *= fov_factor;
-
-                transformed_vertices[j] = transformed_vertex;
-            }
-
-            /////////////////////////////
-            //- karim: backface culling
-            //
-            if (app->cull_mode == CULL_BACKFACE)
-            {
-                vec3_t vector_a = transformed_vertices[0];
-                vec3_t vector_b = transformed_vertices[1];
-                vec3_t vector_c = transformed_vertices[2];
-
-                // Get the vector subtraction of B-A and C-A
-                vec3_t vector_ab = vec3_sub(vector_b, vector_a);
-                vec3_t vector_ac = vec3_sub(vector_c, vector_a);
-
-                // Compute the face normal (using cross product to find perpendicular)
-                vec3_t normal = vec3_cross(vector_ab, vector_ac);
-
-                // Find the vector between a point in the triangle and the camera origin
-                vec3_t camera_ray = vec3_sub(camera_position, vector_a);
-
-                // Calculate how aligned the camera ray is with the face normal (using dot product)
-                float dot_normal_camera = vec3_dot(camera_ray, normal);
-
-                // Bypass the triangles that are looking away from the camera
-                if (dot_normal_camera < 0)
+                // Loop all three vertices of this current face and apply transformations
+                for (U32 j = 0; j < 3; ++j)
                 {
-                    continue;
+                    vec3_t transformed_vertex = face_vertices[j];
+
+                    // Rotate points
+                    transformed_vertex = vec3_rotate_x(transformed_vertex, state->rotation.x);
+                    transformed_vertex = vec3_rotate_y(transformed_vertex, state->rotation.y);
+                    transformed_vertex = vec3_rotate_z(transformed_vertex, state->rotation.z);
+
+                    transformed_vertex.z += 5;
+
+                    // Scale the transformed vertex
+                    transformed_vertex.x *= fov_factor;
+                    transformed_vertex.y *= fov_factor;
+
+                    transformed_vertices[j] = transformed_vertex;
                 }
+
+                /////////////////////////////
+                //- karim: backface culling
+                //
+                if (app->cull_mode == CULL_BACKFACE)
+                {
+                    vec3_t vector_a = transformed_vertices[0];
+                    vec3_t vector_b = transformed_vertices[1];
+                    vec3_t vector_c = transformed_vertices[2];
+
+                    // Get the vector subtraction of B-A and C-A
+                    vec3_t vector_ab = vec3_sub(vector_b, vector_a);
+                    vec3_t vector_ac = vec3_sub(vector_c, vector_a);
+
+                    // Compute the face normal (using cross product to find perpendicular)
+                    vec3_t normal = vec3_cross(vector_ab, vector_ac);
+
+                    // Find the vector between a point in the triangle and the camera origin
+                    vec3_t camera_ray = vec3_sub(camera_position, vector_a);
+
+                    // Calculate how aligned the camera ray is with the face normal (using dot product)
+                    float dot_normal_camera = vec3_dot(camera_ray, normal);
+
+                    // Bypass the triangles that are looking away from the camera
+                    if (dot_normal_camera < 0)
+                    {
+                        continue;
+                    }
+                }
+
+                // Loop all three vertices to perform projection
+                for (U32 j = 0; j < 3; ++j)
+                {
+                    // Project the current vertex
+                    vec2_t projected_point = project(transformed_vertices[j]);
+
+                    // Translate the projected points to the middle of the screen
+                    projected_point.x += (F32)buffer->width / 2;
+                    projected_point.y += (F32)buffer->height / 2;
+
+                    // Save the projected 2D vector in the triangle
+                    projected_triangle.points[j] = projected_point;
+                }
+
+                // Save the projected triangle in the array
+                triangles_to_render[triangle_count++] = projected_triangle;
             }
-
-            // Loop all three vertices to perform projection
-            for (U32 j = 0; j < 3; ++j)
-            {
-                // Project the current vertex
-                vec2_t projected_point = project(transformed_vertices[j]);
-
-                // Translate the projected points to the middle of the screen
-                projected_point.x += (F32)buffer->width / 2;
-                projected_point.y += (F32)buffer->height / 2;
-
-                // Save the projected 2D vector in the triangle
-                projected_triangle.points[j] = projected_point;
-            }
-
-            // Save the projected triangle in the array
-            triangles_to_render[triangle_count++] = projected_triangle;
         }
 #else
     // Existing 2D update code

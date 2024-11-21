@@ -3,7 +3,7 @@
 //
 
 
-void draw_grid(game_color_buffer_t* buffer)
+function void draw_grid(game_color_buffer_t* buffer)
 {
     for (U32 y = 0; y < buffer->height; y += 10)
     {
@@ -17,20 +17,20 @@ void draw_grid(game_color_buffer_t* buffer)
     }
 }
 
-void draw_pixel(game_color_buffer_t* buffer, S32 x, S32 y, U32 color)
+function void draw_pixel(game_color_buffer_t* buffer, S32 x, S32 y, U32 color)
 {
     if (x >= buffer->width || x < 0 || y >= buffer->height || y < 0) return;
     buffer->memory[(y * buffer->width) + x] = color;
 }
 
-void draw_triangle(game_color_buffer_t* buffer, S32 x0, S32 y0, S32 x1, S32 y1, S32 x2, S32 y2, U32 color)
+function void draw_triangle(game_color_buffer_t* buffer, S32 x0, S32 y0, S32 x1, S32 y1, S32 x2, S32 y2, U32 color)
 {
     draw_line(buffer, x0, y0, x1, y1, color);
     draw_line(buffer, x1, y1, x2, y2, color);
     draw_line(buffer, x2, y2, x0, y0, color);
 }
 
-void fill_flat_bottom_triangle(game_color_buffer_t* buffer, S32 x0, S32 y0, S32 x1, S32 y1, S32 x2, S32 y2, U32 color)
+function void fill_flat_bottom_triangle(game_color_buffer_t* buffer, S32 x0, S32 y0, S32 x1, S32 y1, S32 x2, S32 y2, U32 color)
 {
     // Find the two slopes (two triangle legs)
     F32 inv_slope_1 = (F32)(x1-x0)/(y1-y0);
@@ -49,7 +49,7 @@ void fill_flat_bottom_triangle(game_color_buffer_t* buffer, S32 x0, S32 y0, S32 
     }
 }
 
-void fill_flat_top_triangle(game_color_buffer_t* buffer, S32 x0, S32 y0, S32 x1, S32 y1, S32 x2, S32 y2, U32 color)
+function void fill_flat_top_triangle(game_color_buffer_t* buffer, S32 x0, S32 y0, S32 x1, S32 y1, S32 x2, S32 y2, U32 color)
 {
     // Find the two slopes (two triangle legs)
     F32 inv_slope_1 = (F32)(x2-x0)/(y2-y0);
@@ -69,7 +69,7 @@ void fill_flat_top_triangle(game_color_buffer_t* buffer, S32 x0, S32 y0, S32 x1,
 }
 
 
-void draw_filled_triangle(game_color_buffer_t* buffer, S32 x0, S32 y0, S32 x1, S32 y1, S32 x2, S32 y2, U32 color)
+function void draw_filled_triangle(game_color_buffer_t* buffer, S32 x0, S32 y0, S32 x1, S32 y1, S32 x2, S32 y2, U32 color)
 {
     // We need to sort vertices by y-coordinate ascending (y0 < y1 < y2)
     if (y0 > y1)
@@ -110,7 +110,7 @@ void draw_filled_triangle(game_color_buffer_t* buffer, S32 x0, S32 y0, S32 x1, S
 
 }
 
-void draw_line(game_color_buffer_t* buffer, S32 x0, S32 y0, S32 x1, S32 y1, U32 color)
+function void draw_line(game_color_buffer_t* buffer, S32 x0, S32 y0, S32 x1, S32 y1, U32 color)
 {
     S32 dx = abs(x1 - x0);
     S32 dy = abs(y1 - y0);
@@ -140,7 +140,7 @@ void draw_line(game_color_buffer_t* buffer, S32 x0, S32 y0, S32 x1, S32 y1, U32 
 }
 
 
-void draw_rect(game_color_buffer_t* buffer, S32 x, S32 y, U32 width, U32 height, U32 color)
+function void draw_rect(game_color_buffer_t* buffer, S32 x, S32 y, U32 width, U32 height, U32 color)
 {
     if (x >= buffer->width || x < 0 || y >= buffer->height || y < 0) return;
     for (U32 row = y; row < y + height; ++row)
@@ -152,7 +152,7 @@ void draw_rect(game_color_buffer_t* buffer, S32 x, S32 y, U32 width, U32 height,
     }
 }
 
-void clear_color_buffer(game_color_buffer_t* buffer, U32 width, U32 height, U32 color)
+function void clear_color_buffer(game_color_buffer_t* buffer, U32 width, U32 height, U32 color)
 {
     for (int row = 0; row < height; ++row)
     {

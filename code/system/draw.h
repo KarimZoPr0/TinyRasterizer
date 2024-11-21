@@ -15,13 +15,13 @@ struct game_color_buffer_t
     U32 height;
 };
 
-void clear_color_buffer(game_color_buffer_t* buffer, U32 width, U32 height, U32 color);
-void draw_grid( game_color_buffer_t *buffer);
-void draw_pixel( game_color_buffer_t *buffer, S32 x, S32 y, U32 color);
-void draw_line( game_color_buffer_t *buffer, S32 x0, S32 y0, S32 x1, S32 y1, U32 color);
-void draw_triangle( game_color_buffer_t *buffer, S32 x0, S32 y0, S32 x1, S32 y1, S32 x2, S32 y2, U32 color);
-void draw_filled_triangle( game_color_buffer_t *buffer, S32 x0, S32 y0, S32 x1, S32 y1, S32 x2, S32 y2, U32 color);
-void draw_rect( game_color_buffer_t *buffer, S32 x, S32 y, U32 width, U32 height, U32 color );
+function void clear_color_buffer(game_color_buffer_t* buffer, U32 width, U32 height, U32 color);
+function void draw_grid( game_color_buffer_t *buffer);
+function void draw_pixel( game_color_buffer_t *buffer, S32 x, S32 y, U32 color);
+function void draw_line( game_color_buffer_t *buffer, S32 x0, S32 y0, S32 x1, S32 y1, U32 color);
+function void draw_triangle( game_color_buffer_t *buffer, S32 x0, S32 y0, S32 x1, S32 y1, S32 x2, S32 y2, U32 color);
+function void draw_filled_triangle( game_color_buffer_t *buffer, S32 x0, S32 y0, S32 x1, S32 y1, S32 x2, S32 y2, U32 color);
+function void draw_rect( game_color_buffer_t *buffer, S32 x, S32 y, U32 width, U32 height, U32 color );
 // void render_color_buffer( uint32_t *color_buffer);
 // void clear_color_buffer(uint32_t *color_buffer, uint32_t color );
 
