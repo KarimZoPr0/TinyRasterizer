@@ -1,14 +1,11 @@
 
-# 3D Graphics
+# Tiny Rasterizer
 
 Working on strengthening my understanding in 3D Graphics.
 
-## Features
+### Code Hotreloading + Record & Rewind
+![colorpicker](https://github.com/user-attachments/assets/76531869-d169-4175-ba31-fc842a8824f2)
 
-- Mesh
-- Obj files
-- Hot reloading (Windows only)
-- Semi transparent window
 
-https://github.com/KarimZoPr0/3D_Graphics/assets/58335539/ede4c7a8-6961-4433-8c53-170cc2595e7b
-
+### Mesh Hotreloading
+![hot edit blend](https://github.com/user-attachments/assets/297bcffb-7ad5-4f69-b3a4-29f3ecfb0ce5)
