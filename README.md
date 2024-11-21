@@ -1,5 +1,5 @@
 
-# Tinyn Rasterizer
+# Tiny Rasterizer
 
 Working on strengthening my understanding in 3D Graphics.
 
