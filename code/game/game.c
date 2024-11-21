@@ -101,9 +101,10 @@ game_update_and_render(app_t* app)
         const U32 num_faces = state->mesh->face_chunks.total_count;
         triangles_to_render = push_array(&app->frame_arena, triangle_t, num_faces);
 
-        // Loop over all triangle faces of the mesh
+        // Loop over all face chunks of the mesh
         for (face_chunk_node_t* face_chunk = state->mesh->face_chunks.first; face_chunk; face_chunk = face_chunk->next)
         {
+            // Loop over all triangle faces of the mesh
             for (U64 i = 0; i < face_chunk->count; ++i)
             {
                 face_t mesh_face = face_chunk->v[i];

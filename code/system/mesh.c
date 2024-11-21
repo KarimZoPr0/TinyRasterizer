@@ -104,13 +104,17 @@ function mesh_t* mesh_from_key(arena_t* arena, mesh_table_t* table, char* filena
 
     if (existing_node)
     {
+        /* TODO(karim):
+         * hash the file contents and compare it to reload instead of last write time.
+         * It's not that comparing last write time is slow, it's the fact that we have to parse the whole file anyways
+         * So why not use the contents of file? That way we use the lines buffer for comparing hashes and also parsing!
+        */
         FILETIME last_write_time = get_last_write_time(filename);
         if (CompareFileTime(&existing_node->v.last_write_time, &last_write_time) != 0)
         {
             file_changed = 1;
         }
     }
-
 
     FILE* file = fopen(filename, "r");
     if (file_changed || (existing_mesh == nil_mesh && file))
@@ -119,6 +123,7 @@ function mesh_t* mesh_from_key(arena_t* arena, mesh_table_t* table, char* filena
         existing_mesh = push_array(arena, mesh_t, 1);
 
         //- karim: parse the file
+        // TODO(karim): load the whole file contents into a buffer
         char line[1024];
         while (fgets(line, sizeof(line), file))
         {
@@ -126,8 +131,9 @@ function mesh_t* mesh_from_key(arena_t* arena, mesh_table_t* table, char* filena
             {
                 //- karim: vertex chunked linked-list
                 vertex_chunk_node_t* n = existing_mesh->vertex_chunks.last;
-                if (!n || n->count >= n->cap)
+                if (n == 0 || n->count >= n->cap)
                 {
+                    // TODO(karim): create a vertex chunk free list
                     n = push_array(arena, vertex_chunk_node_t, 1);
                     SLLQueuePush(existing_mesh->vertex_chunks.first, existing_mesh->vertex_chunks.last, n);
                     n->cap = 256;
@@ -142,8 +148,9 @@ function mesh_t* mesh_from_key(arena_t* arena, mesh_table_t* table, char* filena
             {
                 //- karim: parse face
                 face_chunk_node_t* n = existing_mesh->face_chunks.last;
-                if (!n || n->count >= n->cap)
+                if (n == 0 || n->count >= n->cap)
                 {
+                    // TODO(karim): create a face chunk free list
                     n = push_array(arena, face_chunk_node_t, 1);
                     SLLQueuePush(existing_mesh->face_chunks.first, existing_mesh->face_chunks.last, n);
                     n->cap = 256;
@@ -160,27 +167,6 @@ function mesh_t* mesh_from_key(arena_t* arena, mesh_table_t* table, char* filena
                 existing_mesh->face_chunks.total_count++;
             }
         }
-
-        /*
-        //- karim: copy vertex chunks -> array
-        existing_mesh->vertex_array.count = existing_mesh->vertex_chunks.total_count;
-        existing_mesh->vertex_array.v = push_array(arena, vec3_t, existing_mesh->vertex_array.count);
-        U64 idx = 0;
-        for (vertex_chunk_node_t* n = existing_mesh->vertex_chunks.first; n; n = n->next)
-        {
-            memcpy(existing_mesh->vertex_array.v + idx, n->v, sizeof(vec3_t) * n->count);
-            idx += n->count;
-        }
-
-        //- karim: copy face chunks -> array
-        existing_mesh->face_array.count = existing_mesh->face_chunks.total_count;
-        existing_mesh->face_array.v = push_array(arena, face_t, existing_mesh->face_array.count);
-        idx = 0;
-        for (face_chunk_node_t* n = existing_mesh->face_chunks.first; n; n = n->next)
-        {
-            memcpy(existing_mesh->face_array.v + idx, n->v, sizeof(face_t) * n->count);
-            idx += n->count;
-        }*/
 
         //- karim: update or insert the node
         if (!existing_node)
