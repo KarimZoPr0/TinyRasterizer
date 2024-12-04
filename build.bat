@@ -51,12 +51,6 @@ if "%msvc%"=="1" (
     set OUT_FLAG=-o
 )
 
-:: --- Timing Setup with ctime ------------------------------------------------
-set TIMINGS_FILE=%~dp0timings.ctm
-
-:: --- Start timing with ctime ------------------------------------------------
-ctime -begin %TIMINGS_FILE%
-
 echo Building game DLL...
 %CC% %CFLAGS% /LD code/game/game.c %OUT_FLAG%"%BUILD_DIR%\libgame_new.dll" %LDFLAGS% %DLL_LINK_FLAGS% >nul 2>&1
 if %ERRORLEVEL% neq 0 (
@@ -82,9 +76,6 @@ if %ERRORLEVEL% neq 0 (
     ctime -end %TIMINGS_FILE% %ERRORLEVEL%
     exit /b 1
 )
-
-:: --- End timing with ctime --------------------------------------------------
-ctime -end %TIMINGS_FILE% %ERRORLEVEL%
 
 :: --- Copy SDL Runtime -------------------------------------------------------
 copy "%SDL2_DIR%\bin\SDL2.dll" "%BUILD_DIR%\" >nul
