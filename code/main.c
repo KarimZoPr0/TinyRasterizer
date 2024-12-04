@@ -1,8 +1,8 @@
 #define SDL_MAIN_HANDLED
 
+#include "external/spall.h"
 
-
-#include "SDL.h"
+#include "SDL2/SDL.h"
 #include "base/base_inc.h"
 #include "os/os_inc.h"
 #include "system/system_inc.h"
@@ -31,6 +31,7 @@ typedef enum
 typedef void (*game_update_and_render_func)(app_t* app);
 
 typedef struct win32_game_code win32_game_code;
+
 struct win32_game_code
 {
     HMODULE game_dll;
@@ -38,16 +39,12 @@ struct win32_game_code
 
     game_update_and_render_func update_and_render;
 
-    bool is_valid;
+    B32 is_valid;
 };
-
-void process_input();
-bool initialize_window();
-void destroy_window();
 
 global U32 window_width;
 global U32 window_height;
-global bool is_running = false;
+global B32 is_running = 1;
 global SDL_Window* window;
 global SDL_Renderer* renderer;
 global SDL_Texture* color_buffer_texture;
@@ -59,189 +56,13 @@ global U32 recorded_input_count;
 global U32 recorded_input_index;
 global game_state_t saved_state;
 
+global SpallProfile spall_ctx;
+global SpallBuffer spall_buffer;
+
 app_t* app;
 
 
-void render_color_buffer()
-{
-    SDL_UpdateTexture(
-        color_buffer_texture,
-        NULL,
-        color_buffer,
-        window_width * sizeof(U32)
-    );
-
-    SDL_RenderCopy(renderer, color_buffer_texture, NULL, NULL);
-}
-
-
-win32_game_code load_game_code(char* source_dll_name, char* temp_dll_name)
-{
-    win32_game_code game_code = {0};
-    FILETIME source_last_write_time = get_last_write_time(source_dll_name);
-    FILETIME temp_last_write_time = get_last_write_time(temp_dll_name);
-
-    // Only copy and load if the source DLL is newer than the temp DLL
-    if (CompareFileTime(&source_last_write_time, &temp_last_write_time) > 0)
-    {
-        CopyFile(source_dll_name, temp_dll_name, FALSE);
-        game_code.game_dll = LoadLibraryA(temp_dll_name);
-        if (game_code.game_dll)
-        {
-            game_code.update_and_render = (game_update_and_render_func)GetProcAddress(
-                game_code.game_dll, "game_update_and_render");
-            game_code.last_write_time = source_last_write_time;
-            game_code.is_valid = (game_code.update_and_render) != NULL;
-        }
-    }
-    else
-    {
-        game_code.game_dll = LoadLibraryA(temp_dll_name);
-        if (game_code.game_dll)
-        {
-            game_code.update_and_render = (game_update_and_render_func)GetProcAddress(
-                game_code.game_dll, "game_update_and_render");
-            game_code.last_write_time = source_last_write_time;
-            game_code.is_valid = (game_code.update_and_render) != NULL;
-        }
-    }
-
-    if (!game_code.is_valid)
-    {
-        game_code.update_and_render = NULL;
-    }
-
-    return game_code;
-}
-
-void unload_game_code(win32_game_code* game_code)
-{
-    if (game_code->game_dll)
-    {
-        FreeLibrary(game_code->game_dll);
-        game_code->game_dll = NULL;
-    }
-
-    game_code->is_valid = false;
-    game_code->update_and_render = NULL;
-}
-
-int main()
-{
-    is_running = initialize_window();
-
-    char* source_dll = "libgame.dll";
-    char* temp_dll = "libgame_dll.dll";
-    win32_game_code game_code = load_game_code(source_dll, temp_dll);
-
-
-    arena_t arena = arena_alloc(Gigabytes(64));
-    arena_t frame_arena = arena_alloc(Gigabytes(64));
-
-    app = push_array(&arena, app_t, 1);
-    app->arena = arena;
-    app->frame_arena = frame_arena;
-    app->game_state = push_array(&app->arena, game_state_t, 1);
-    app->input = push_array(&app->arena, game_input_t, 1);
-
-    SDL_DisplayMode display_mode;
-    SDL_GetCurrentDisplayMode(0, &display_mode);
-    color_buffer = push_array(&app->arena, U32, display_mode.w * display_mode.h);
-    color_buffer_texture = SDL_CreateTexture(
-        renderer,
-        SDL_PIXELFORMAT_ARGB8888,
-        SDL_TEXTUREACCESS_STREAMING,
-        window_width,
-        window_height
-    );
-
-    recorded_inputs = push_array(&app->arena, game_input_t, MAX_INPUT_RECORDS);
-
-
-    app->color_buffer = &(game_color_buffer_t){color_buffer, window_width, window_height};
-
-    while (is_running)
-    {
-        FILETIME new_dll_write_time = get_last_write_time(source_dll);
-        if (CompareFileTime(&new_dll_write_time, &game_code.last_write_time) != 0)
-        {
-            unload_game_code(&game_code);
-            game_code = load_game_code(source_dll, temp_dll);
-            printf("Hot reloaded\n");
-        }
-
-        local_persist U32 previous_frame_time = 0;
-        {
-            U32 time_to_wait = FRAME_TARGET_TIME - (SDL_GetTicks() - previous_frame_time);
-            if (time_to_wait > 0 && time_to_wait <= FRAME_TARGET_TIME)
-            {
-                SDL_Delay(time_to_wait);
-            }
-            previous_frame_time = SDL_GetTicks();
-        }
-
-        process_input();
-
-        if (game_code.is_valid)
-        {
-            game_code.update_and_render(app);
-        }
-
-        if (!game_code.is_valid)
-        {
-            printf("Error: game_update_and_render function not found in DLL.\n");
-        }
-
-        render_color_buffer();
-
-        clear_color_buffer(app->color_buffer, window_width, window_height, 0xFF000000);
-
-        SDL_RenderPresent(renderer);
-
-        arena_clear(&app->frame_arena);
-    }
-
-    destroy_window();
-}
-
-bool initialize_window()
-{
-    if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
-    {
-        fprintf(stderr, "Error initializing SDL \n");
-        return false;
-    }
-
-    window_width = 800;
-    window_height = 600;
-
-    window = SDL_CreateWindow(
-        "Tiny Rasterizer",
-        SDL_WINDOWPOS_CENTERED,
-        SDL_WINDOWPOS_CENTERED,
-        window_width,
-        window_height,
-        SDL_WINDOW_ALWAYS_ON_TOP | SDL_WINDOW_RESIZABLE
-    );
-
-    if (!window)
-    {
-        fprintf(stderr, "Error creating SDL window. \n");
-        return false;
-    }
-
-    renderer = SDL_CreateRenderer(window, -1, 0);
-
-    if (!renderer)
-    {
-        fprintf(stderr, "Error creating SDL renderer. \n");
-        return false;
-    }
-
-    return true;
-}
-
-void toggleEngineMode()
+function void toggleEngineMode()
 {
     engine_mode = (engine_mode + 1) % MODE_MAX;
 
@@ -264,94 +85,252 @@ void toggleEngineMode()
     }
 }
 
-void processEventIntoGameInput(SDL_Event* event)
+function win32_game_code load_game_code(char* source_dll_name, char* temp_dll_name)
 {
-    switch (event->type)
+    win32_game_code game_code = {0};
+    FILETIME source_last_write_time = get_last_write_time(source_dll_name);
+    FILETIME temp_last_write_time = get_last_write_time(temp_dll_name);
+
+    //- karim: only copy and load if the source DLL is newer than the temp DLL
+    if (CompareFileTime(&source_last_write_time, &temp_last_write_time) > 0)
     {
-    case SDL_KEYDOWN:
-        doKeyDown(&event->key);
-        break;
-    case SDL_KEYUP:
-        doKeyUp(&event->key);
-        break;
-    default: ;
+        CopyFile(source_dll_name, temp_dll_name, FALSE);
+        game_code.game_dll = LoadLibraryA(temp_dll_name);
+        if (game_code.game_dll)
+        {
+            game_code.update_and_render = (game_update_and_render_func)GetProcAddress(
+                game_code.game_dll, "game_update_and_render");
+            game_code.last_write_time = source_last_write_time;
+            game_code.is_valid = game_code.update_and_render != 0;
+        }
     }
+    else
+    {
+        game_code.game_dll = LoadLibraryA(temp_dll_name);
+        if (game_code.game_dll)
+        {
+            game_code.update_and_render = (game_update_and_render_func)GetProcAddress(
+                game_code.game_dll, "game_update_and_render");
+            game_code.last_write_time = source_last_write_time;
+            game_code.is_valid = game_code.update_and_render != 0;
+        }
+    }
+
+    if (!game_code.is_valid)
+    {
+        game_code.update_and_render = 0;
+    }
+
+    return game_code;
 }
 
-void process_input()
+int main()
 {
-    SDL_Event event;
-    while (SDL_PollEvent(&event))
+    //- karim: SDL initialization
+    SDL_Init(SDL_INIT_EVERYTHING);
+    window_width = 800;
+    window_height = 600;
+    window = SDL_CreateWindow(
+        "Tiny Rasterizer",
+        SDL_WINDOWPOS_CENTERED,
+        SDL_WINDOWPOS_CENTERED,
+        window_width,
+        window_height,
+        SDL_WINDOW_ALWAYS_ON_TOP | SDL_WINDOW_RESIZABLE
+    );
+    renderer = SDL_CreateRenderer(window, -1, 0);
+
+    //- karim: load game code
+    char* source_dll = "libgame.dll";
+    char* temp_dll = "libgame_dll.dll";
+    win32_game_code game_code = load_game_code(source_dll, temp_dll);
+
+    //- karim: set up state
+    game_state_t* state = {0};
     {
-        if (engine_mode == MODE_NORMAL || engine_mode == MODE_RECORD)
+        arena_t arena = arena_alloc(Gigabytes(64));
+        arena_t frame_arena = arena_alloc(Gigabytes(8));
+        arena_t meshes_arena = arena_alloc(Gigabytes(8));
+        arena_t vertex_chunk_arena = arena_alloc(Gigabytes(8));
+        arena_t face_chunk_arena = arena_alloc(Gigabytes(8));
+
+        state = push_array(&arena, game_state_t, 1);
+        state->arena = arena;
+        state->frame_arena = frame_arena;
+        state->meshes_arena = meshes_arena;
+        state->vertex_chunk_arena = vertex_chunk_arena;
+        state->face_chunk_arena = face_chunk_arena;
+    }
+
+    //- karim: set up app
+    {
+        arena_t arena = arena_alloc(Gigabytes(64));
+        app = push_array(&arena, app_t, 1);
+        app->arena = arena;
+        app->game_state = state;
+
+        //-karim: set up input
+        app->input = push_array(&app->arena, game_input_t, 1);
+        recorded_inputs = push_array(&app->arena, game_input_t, MAX_INPUT_RECORDS);
+
+        //- karim: set up color buffer
+        SDL_DisplayMode display_mode;
+        SDL_GetCurrentDisplayMode(0, &display_mode);
+        color_buffer = push_array(&app->arena, U32, display_mode.w * display_mode.h);
+        color_buffer_texture = SDL_CreateTexture(
+            renderer,
+            SDL_PIXELFORMAT_ARGB8888,
+            SDL_TEXTUREACCESS_STREAMING,
+            window_width,
+            window_height
+        );
+        app->color_buffer = &(game_color_buffer_t){color_buffer, window_width, window_height};
+    }
+
+    //- karim: set up spall profiler
+    app->spall_ctx = spall_init_file("../TinyRasterizer.spall", 1);
+    U32 buffer_size = 1 * 1024 * 1024;
+    U8* buffer = push_array(&app->arena, U8, buffer_size);
+    app->spall_buffer = (SpallBuffer){.length = buffer_size, .data = buffer};
+    spall_buffer_init(&app->spall_ctx, &app->spall_buffer);
+
+    //- karim: main loop
+    U32 previous_frame_time = 0;
+    U32 time_to_wait = 0;
+    while (is_running)
+    {
+        //- karim: Hotreload
+        FILETIME new_dll_write_time = get_last_write_time(source_dll);
+        if (CompareFileTime(&new_dll_write_time, &game_code.last_write_time) != 0)
         {
-            processEventIntoGameInput(&event);
+            //- karim: unload game code
+            if (game_code.game_dll)
+            {
+                FreeLibrary(game_code.game_dll);
+                game_code.game_dll = 0;
+            }
+
+            //- karim: load game code
+            game_code.is_valid = false;
+            game_code.update_and_render = 0;
+            game_code = load_game_code(source_dll, temp_dll);
         }
 
-        if (event.type == SDL_KEYDOWN)
+        //- karim: process input
         {
-            if (event.key.repeat == 0 && event.key.keysym.scancode == SDL_SCANCODE_L)
+            SDL_Event event;
+            while (SDL_PollEvent(&event))
             {
-                toggleEngineMode();
+                if (engine_mode == MODE_NORMAL || engine_mode == MODE_RECORD)
+                {
+                    switch (event.type)
+                    {
+                    case SDL_KEYDOWN:
+                        doKeyDown(&event.key);
+                        break;
+                    case SDL_KEYUP:
+                        doKeyUp(&event.key);
+                        break;
+                    default: ;
+                    }
+                }
+
+                if (event.type == SDL_KEYDOWN)
+                {
+                    if (event.key.repeat == 0 && event.key.keysym.scancode == SDL_SCANCODE_L)
+                    {
+                        toggleEngineMode();
+                    }
+                }
+                else if (event.type == SDL_QUIT)
+                {
+                    is_running = false;
+                }
+
+                switch (event.window.event)
+                {
+                case SDL_WINDOWEVENT_RESIZED:
+                    app->color_buffer->width = window_width = event.window.data1;
+                    app->color_buffer->height = window_height = event.window.data2;
+
+                    SDL_DestroyTexture(color_buffer_texture);
+                    color_buffer_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888,
+                                                             SDL_TEXTUREACCESS_STREAMING,
+                                                             window_width, window_height);
+                    break;
+                case SDL_WINDOWEVENT_FOCUS_GAINED:
+                    SDL_SetWindowOpacity(window, 1.0f);
+                    break;
+                case SDL_WINDOWEVENT_FOCUS_LOST:
+                    SDL_SetWindowOpacity(window, 0.5f);
+                    break;
+                default:
+                    break;
+                }
+            }
+
+            if (engine_mode == MODE_RECORD)
+            {
+                if (recorded_input_count < MAX_INPUT_RECORDS)
+                {
+                    recorded_inputs[recorded_input_count++] = *app->input;
+                }
+                else
+                {
+                    printf("Recorded input buffer is full.\n");
+                    engine_mode = MODE_RECORD;
+                    toggleEngineMode();
+                }
+            }
+
+            if (engine_mode == MODE_PLAYBACK)
+            {
+                if (recorded_input_index < recorded_input_count)
+                {
+                    *app->input = recorded_inputs[recorded_input_index++];
+                }
+                else if (recorded_input_index >= recorded_input_count)
+                {
+                    recorded_input_index = 0;
+                    memcpy(app->game_state, &saved_state, sizeof(game_state_t));
+                }
             }
         }
-        else if (event.type == SDL_QUIT)
+
+        //- karim: update & render
+        if (game_code.is_valid)
         {
-            is_running = false;
+            game_code.update_and_render(app);
         }
 
-        switch (event.window.event)
+        //- karim: render
         {
-        case SDL_WINDOWEVENT_RESIZED:
-            app->color_buffer->width = window_width = event.window.data1;
-            app->color_buffer->height = window_height = event.window.data2;
+            //- karim: render color buffer
+            SDL_UpdateTexture(color_buffer_texture, 0, color_buffer, window_width * sizeof(U32));
+            SDL_RenderCopy(renderer, color_buffer_texture, 0, 0);
 
-            SDL_DestroyTexture(color_buffer_texture);
-            color_buffer_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING,
-                                                     window_width, window_height);
-            break;
-        case SDL_WINDOWEVENT_FOCUS_GAINED:
-            SDL_SetWindowOpacity(window, 1.0f);
-            break;
-        case SDL_WINDOWEVENT_FOCUS_LOST:
-            SDL_SetWindowOpacity(window, 0.5f);
-            break;
-        default:
-            break;
+            //- karim: clear & present
+            clear_color_buffer(app->color_buffer, window_width, window_height, 0xFF000000);
+            SDL_RenderPresent(renderer);
         }
+
+        //- karim: cap frame rate
+        time_to_wait = FRAME_TARGET_TIME - (SDL_GetTicks() - previous_frame_time);
+        if (time_to_wait > 0 && time_to_wait <= FRAME_TARGET_TIME)
+        {
+            SDL_Delay(time_to_wait);
+        }
+        previous_frame_time = SDL_GetTicks();
+
+        //- karim: flush spall buffer
+        spall_buffer_quit(&app->spall_ctx, &app->spall_buffer);
+
+        //- karim: clear frame arena
+        arena_clear(&state->frame_arena);
     }
 
-    if (engine_mode == MODE_RECORD)
-    {
-        if (recorded_input_count < MAX_INPUT_RECORDS)
-        {
-            recorded_inputs[recorded_input_count++] = *app->input;
-        }
-        else
-        {
-            printf("Recorded input buffer is full.\n");
-            engine_mode = MODE_RECORD;
-            toggleEngineMode();
-        }
-    }
-
-    if (engine_mode == MODE_PLAYBACK)
-    {
-        if (recorded_input_index < recorded_input_count)
-        {
-            *app->input = recorded_inputs[recorded_input_index++];
-        }
-        else if (recorded_input_index >= recorded_input_count)
-        {
-            recorded_input_index = 0;
-            memcpy(app->game_state, &saved_state, sizeof(game_state_t));
-        }
-    }
-}
-
-
-void destroy_window()
-{
+    //- karim: clean up
+    spall_quit(&spall_ctx);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();

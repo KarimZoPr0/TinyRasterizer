@@ -140,11 +140,20 @@ struct game_input_t
 typedef struct game_state_t game_state_t;
 struct game_state_t
 {
-    rect_t player;
-    S32 offset;
+    arena_t arena;
+    arena_t frame_arena;
+
+    arena_t meshes_arena;
     mesh_t* mesh;
     mesh_t *nil_mesh;
+    mesh_t *first_free_mesh;
     mesh_table_t* mesh_table;
+
+    arena_t vertex_chunk_arena;
+    vertex_chunk_node_t *first_free_vertex_chunk;
+    arena_t face_chunk_arena;
+    face_chunk_node_t *first_free_face_chunk;
+
     vec3_t rotation;
 };
 
@@ -153,7 +162,6 @@ typedef struct app_t app_t;
 struct app_t
 {
     arena_t arena;
-    arena_t frame_arena;
 
     game_color_buffer_t* color_buffer;
     game_state_t* game_state;
@@ -161,6 +169,9 @@ struct app_t
 
     cull_mode cull_mode;
     render_mode render_mode;
+
+    SpallProfile spall_ctx;
+    SpallBuffer spall_buffer;
 
     B32 is_initialized;
 };

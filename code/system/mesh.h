@@ -5,11 +5,22 @@
 #ifndef INC_3D_GRAPHICS_MESH_H
 #define INC_3D_GRAPHICS_MESH_H
 
-#define N_MESH_VERTICES 8
-extern vec3_t cube_vertices[N_MESH_VERTICES];
+typedef struct face_t face_t;
+struct face_t
+{
+    U32 a;
+    U32 b;
+    U32 c;
+    U32 color;
+};
 
-#define N_MESH_FACES (6 * 2)
-extern face_t cube_faces[N_MESH_FACES];
+typedef struct triangle_t triangle_t;
+struct triangle_t
+{
+    vec2_t points[3];
+    U32 color;
+    F32 avg_depth;
+};
 
 //- karim: vertex types
 typedef struct vertex_node_t vertex_node_t;
@@ -43,6 +54,7 @@ struct vertex_array_t
 {
     vec3_t *v;
     U64 count;
+    U64 capacity;
 };
 
 //- karim: face types
@@ -76,6 +88,7 @@ struct face_array_t
 {
     face_t *v;
     U64 count;
+    U32 capacity;
 };
 
 //- karim: mesh type
@@ -90,6 +103,8 @@ struct mesh_t
     vertex_chunk_list_t vertex_chunks;
     vertex_array_t vertex_array;
 
+    vec3_t translation;
+    vec3_t scale;
     vec3_t rotation;
 
     // file properties
@@ -118,8 +133,16 @@ struct mesh_table_t
     U64 slot_count;
 };
 
-function void init_nil_mesh(arena_t* arena, mesh_t* mesh);
+typedef struct game_state_t game_state_t;
+struct game_state_t;
+
 function vec3_t get_vertex_by_index(vertex_chunk_list_t* vertex_chunks, U64 idx);
-function mesh_t* mesh_from_key(arena_t* arena, mesh_table_t* table, char* filename);
+function mesh_t* mesh_from_key(game_state_t *state, char* filename);
+
+#define N_MESH_VERTICES 8
+extern vec3_t cube_vertices[N_MESH_VERTICES];
+
+#define N_MESH_FACES (6 * 2)
+extern face_t cube_faces[N_MESH_FACES];
 
 #endif //INC_3D_GRAPHICS_MESH_H

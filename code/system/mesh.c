@@ -2,8 +2,6 @@
 // Created by Karim on 2023-10-08.
 //
 
-global mesh_t* nil_mesh = {0};
-
 vec3_t cube_vertices[N_MESH_VERTICES] = {
     {.x = -1, .y = -1, .z = -1}, // 1
     {.x = -1, .y = 1, .z = -1}, // 2
@@ -18,38 +16,24 @@ vec3_t cube_vertices[N_MESH_VERTICES] = {
 #define N_MESH_FACES (6 * 2)
 face_t cube_faces[N_MESH_FACES] = {
     // front
-    {.a = 1, .b = 2, .c = 3},
-    {.a = 1, .b = 3, .c = 4},
+    {.a = 1, .b = 2, .c = 3, .color = 0xFFFF0000},
+    {.a = 1, .b = 3, .c = 4, .color = 0xFFFF0000},
     // right
-    {.a = 4, .b = 3, .c = 5},
-    {.a = 4, .b = 5, .c = 6},
+    {.a = 4, .b = 3, .c = 5, .color = 0xFF00FF00},
+    {.a = 4, .b = 5, .c = 6, .color = 0xFF00FF00},
     // back
-    {.a = 6, .b = 5, .c = 7},
-    {.a = 6, .b = 7, .c = 8},
+    {.a = 6, .b = 5, .c = 7, .color = 0xFF0000FF},
+    {.a = 6, .b = 7, .c = 8, .color = 0xFF0000FF},
     // left
-    {.a = 8, .b = 7, .c = 2},
-    {.a = 8, .b = 2, .c = 1},
+    {.a = 8, .b = 7, .c = 2, .color = 0xFFFFFF00},
+    {.a = 8, .b = 2, .c = 1, .color = 0xFFFFFF00},
     // top
-    {.a = 2, .b = 7, .c = 5},
-    {.a = 2, .b = 5, .c = 3},
+    {.a = 2, .b = 7, .c = 5, .color = 0xFFFF00FF},
+    {.a = 2, .b = 5, .c = 3, .color = 0xFFFF00FF},
     // bottom
-    {.a = 6, .b = 8, .c = 1},
-    {.a = 6, .b = 1, .c = 4}
+    {.a = 6, .b = 8, .c = 1, .color = 0xFFFFFFFF},
+    {.a = 6, .b = 1, .c = 4, .color = 0xFFFFFFFF}
 };
-
-function void init_nil_mesh(arena_t* arena, mesh_t* mesh)
-{
-    vec3_t* vertices = push_array(arena, vec3_t, N_MESH_VERTICES);
-    memcpy(vertices, cube_vertices, sizeof(cube_vertices));
-    mesh->vertex_array.v = vertices;
-
-    face_t* faces = push_array(arena, face_t, N_MESH_FACES);
-    memcpy(faces, cube_faces, sizeof(cube_faces));
-    mesh->face_array.v = faces;
-
-    mesh->vertex_array.count = N_MESH_VERTICES;
-    mesh->face_array.count = N_MESH_FACES;
-}
 
 function U64 hash_from_string(char* filename)
 {
@@ -65,7 +49,7 @@ function vec3_t get_vertex_by_index(vertex_chunk_list_t* vertex_chunks, U64 idx)
 {
     vec3_t vertex = {0};
     U64 remaining = idx - 1;
-    for (vertex_chunk_node_t *n = vertex_chunks->first; n != 0; n = n->next)
+    for (vertex_chunk_node_t* n = vertex_chunks->first; n != 0; n = n->next)
     {
         if (remaining < n->cap)
         {
@@ -77,20 +61,20 @@ function vec3_t get_vertex_by_index(vertex_chunk_list_t* vertex_chunks, U64 idx)
     return vertex;
 }
 
-function mesh_t* mesh_from_key(arena_t* arena, mesh_table_t* table, char* filename)
+function mesh_t* mesh_from_key(game_state_t* state, char* filename)
 {
     arena_t* scratch_arena = scratch_begin();
 
     //- karim: return value
-    mesh_t* existing_mesh = nil_mesh;
+    mesh_t* existing_mesh = state->nil_mesh;
     B32 file_changed = 0;
 
     //- karim: map key -> hash and slot
     U64 hash = hash_from_string(filename);
-    U64 slot_idx = hash % table->slot_count;
+    U64 slot_idx = hash % state->mesh_table->slot_count;
 
     //- karim: find existing node in the table
-    mesh_slot_t* slot = &table->slots[slot_idx];
+    mesh_slot_t* slot = &state->mesh_table->slots[slot_idx];
     mesh_node_t* existing_node = 0;
     for (mesh_node_t* n = slot->first; n != 0; n = n->next)
     {
@@ -102,14 +86,9 @@ function mesh_t* mesh_from_key(arena_t* arena, mesh_table_t* table, char* filena
         }
     }
 
+    FILETIME last_write_time = get_last_write_time(filename);
     if (existing_node)
     {
-        /* TODO(karim):
-         * hash the file contents and compare it to reload instead of last write time.
-         * It's not that comparing last write time is slow, it's the fact that we have to parse the whole file anyways
-         * So why not use the contents of file? That way we use the lines buffer for comparing hashes and also parsing!
-        */
-        FILETIME last_write_time = get_last_write_time(filename);
         if (CompareFileTime(&existing_node->v.last_write_time, &last_write_time) != 0)
         {
             file_changed = 1;
@@ -117,13 +96,41 @@ function mesh_t* mesh_from_key(arena_t* arena, mesh_table_t* table, char* filena
     }
 
     FILE* file = fopen(filename, "r");
-    if (file_changed || (existing_mesh == nil_mesh && file))
+    if (file_changed || (existing_mesh == state->nil_mesh && file))
     {
-        //- karim: allocate a new mesh or reuse an existing one
-        existing_mesh = push_array(arena, mesh_t, 1);
+        if (existing_node != 0)
+        {
+            existing_mesh = &existing_node->v;
+
+            //- karim: free vertex chunks
+            if (existing_mesh->vertex_chunks.first != 0)
+            {
+                existing_mesh->vertex_chunks.last->next = state->first_free_vertex_chunk;
+                state->first_free_vertex_chunk = existing_mesh->vertex_chunks.first;
+                existing_mesh->vertex_chunks.first = existing_mesh->vertex_chunks.last = 0;
+                existing_mesh->vertex_chunks.total_count = existing_mesh->vertex_chunks.chunk_count = 0;
+            }
+
+            //- karim: free face chunks
+            if (existing_mesh->face_chunks.first != 0)
+            {
+                existing_mesh->face_chunks.last->next = state->first_free_face_chunk;
+                state->first_free_face_chunk = existing_mesh->face_chunks.first;
+                existing_mesh->face_chunks.first = existing_mesh->face_chunks.last = 0;
+                existing_mesh->face_chunks.total_count = existing_mesh->face_chunks.chunk_count = 0;
+            }
+        }
+        else
+        {
+            //- karim: allocate a new mesh & node
+            existing_node = push_array(&state->meshes_arena, mesh_node_t, 1);
+            existing_mesh = &existing_node->v;
+            existing_mesh->filename = filename;
+            existing_mesh->last_write_time = last_write_time;
+            SLLQueuePush(slot->first, slot->last, existing_node);
+        }
 
         //- karim: parse the file
-        // TODO(karim): load the whole file contents into a buffer
         char line[1024];
         while (fgets(line, sizeof(line), file))
         {
@@ -133,11 +140,20 @@ function mesh_t* mesh_from_key(arena_t* arena, mesh_table_t* table, char* filena
                 vertex_chunk_node_t* n = existing_mesh->vertex_chunks.last;
                 if (n == 0 || n->count >= n->cap)
                 {
-                    // TODO(karim): create a vertex chunk free list
-                    n = push_array(arena, vertex_chunk_node_t, 1);
+                    n = state->first_free_vertex_chunk;
+                    if (n == 0)
+                    {
+                        n = push_array(&state->vertex_chunk_arena, vertex_chunk_node_t, 1);
+                        n->cap = 1024;
+                        n->v = push_array(&state->vertex_chunk_arena, vec3_t, n->cap);
+                    }
+                    else
+                    {
+                        state->first_free_vertex_chunk = state->first_free_vertex_chunk->next;
+                    }
+                    n->next = 0;
+                    n->count = 0;
                     SLLQueuePush(existing_mesh->vertex_chunks.first, existing_mesh->vertex_chunks.last, n);
-                    n->cap = 256;
-                    n->v = push_array(arena, vec3_t, n->cap);
                     existing_mesh->vertex_chunks.chunk_count++;
                 }
                 vec3_t* vertex = &n->v[n->count++];
@@ -146,15 +162,24 @@ function mesh_t* mesh_from_key(arena_t* arena, mesh_table_t* table, char* filena
             }
             else if (strncmp(line, "f ", 2) == 0)
             {
-                //- karim: parse face
+                //- karim: face chunked linked-list
                 face_chunk_node_t* n = existing_mesh->face_chunks.last;
                 if (n == 0 || n->count >= n->cap)
                 {
-                    // TODO(karim): create a face chunk free list
-                    n = push_array(arena, face_chunk_node_t, 1);
+                    n = state->first_free_face_chunk;
+                    if (n == 0)
+                    {
+                        n = push_array(&state->face_chunk_arena, face_chunk_node_t, 1);
+                        n->cap = 1024;
+                        n->v = push_array(&state->face_chunk_arena, face_t, n->cap);
+                    }
+                    else
+                    {
+                        state->first_free_face_chunk = state->first_free_face_chunk->next;
+                    }
+                    n->next = 0;
+                    n->count = 0;
                     SLLQueuePush(existing_mesh->face_chunks.first, existing_mesh->face_chunks.last, n);
-                    n->cap = 256;
-                    n->v = push_array(arena, face_t, n->cap);
                     existing_mesh->face_chunks.chunk_count++;
                 }
                 face_t* face = &n->v[n->count++];
@@ -168,24 +193,12 @@ function mesh_t* mesh_from_key(arena_t* arena, mesh_table_t* table, char* filena
             }
         }
 
-        //- karim: update or insert the node
-        if (!existing_node)
-        {
-            mesh_node_t* n = push_array(arena, mesh_node_t, 1);
-            n->v = *existing_mesh;
-            n->v.filename = filename;
-            n->v.last_write_time = get_last_write_time(filename);
-            SLLQueuePush(slot->first, slot->last, n);
-        }
-        else
-        {
-            existing_node->v = *existing_mesh;
-            existing_node->v.last_write_time = get_last_write_time(filename);
-            existing_node->v.filename = filename;
-        }
+        //- karim: update the last write time
+        existing_mesh->last_write_time = last_write_time;
+        existing_mesh->scale = (vec3_t){1.0f, 1.0f, 1.0f};
     }
 
-    if (file) fclose(file);
+    fclose(file);
     scratch_end(scratch_arena);
     return existing_mesh;
 }
