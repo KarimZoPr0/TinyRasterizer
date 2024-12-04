@@ -1,5 +1,5 @@
 # TOC
-- [What is tiny rasterizer](#what-is-tiny-rasterizer)
+- [What is Tiny Rasterizer](#what-is-tiny-rasterizer)
   - [Why Software Rendering](#why-software-rendering)
 - [Philosophies](#philosophies)
 - [Build System](#build-system)
@@ -7,7 +7,7 @@
   - [Code Hotreloading + Record & Rewind](#code-hotreloading--record--rewind)
   - [Mesh Hotreloading](#mesh-hotreloading)
 
-## What is tiny rasterizer
+## What is Tiny Rasterizer
 Tiny Rasterizer is a software renderer, meaning it processes graphics entirely using the CPU rather than relying on specialized GPU hardware. Software rendering has a rich history in computer graphics and remains relevant for its flexibility, educational value, and independence from hardware constraints.
 
 ### Why Software Rendering
