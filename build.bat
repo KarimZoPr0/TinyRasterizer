@@ -54,8 +54,7 @@ if "%msvc%"=="1" (
 echo Building game DLL...
 %CC% %CFLAGS% /LD code/game/game.c %OUT_FLAG%"%BUILD_DIR%\libgame_new.dll" %LDFLAGS% %DLL_LINK_FLAGS% >nul 2>&1
 if %ERRORLEVEL% neq 0 (
-    echo Failed to build game DLL. Check logs for details.
-    ctime -end %TIMINGS_FILE% %ERRORLEVEL%
+    echo Failed to build game DLL.
     exit /b 1
 )
 
@@ -73,7 +72,6 @@ echo Building main application...
 %CC% %CFLAGS% code/main.c %OUT_FLAG%"%BUILD_DIR%\TinyRasterizer.exe" %LDFLAGS% >nul 2>&1
 if %ERRORLEVEL% neq 0 (
     echo Failed to build main application.
-    ctime -end %TIMINGS_FILE% %ERRORLEVEL%
     exit /b 1
 )
 
