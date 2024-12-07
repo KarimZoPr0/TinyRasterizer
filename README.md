@@ -27,12 +27,7 @@ Note: Currently, only x64 Windows development is supported.
 
 
 ### 1. Prerequisites
-Ensure you have the following installed:
-
-```
-Microsoft C/C++ Build Tools (version 19.41 or later) with the MSVC compiler and Windows SDK.
-(Optional) Clang, if the Windows SDK is already installed.
-```
+Ensure you have the following installed: https://aka.ms/vs/17/release/vs_BuildTools.exe
 
 ### 2. Environment Setup
 Before building, configure your terminal to use the MSVC compiler. This is done by running the vcvarsall.bat x64 script, which is included in the Microsoft C/C++ Build Tools.
