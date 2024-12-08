@@ -1,7 +1,6 @@
 # TOC
 - [What is Tiny Rasterizer](#what-is-tiny-rasterizer)
   - [Why Software Rendering](#why-software-rendering)
-- [Philosophies](#philosophies)
 - [Build System](#build-system)
   - [1. Prerequisites](#1-prerequisites)
   - [2. Environment Setup](#2-environment-setup)
@@ -19,20 +18,12 @@ GPUs offer advanced, high-performance features, but their complexity can oversha
 
 Not every device has a modern GPU or reliable driver support. CPU-based rendering ensures Tiny Rasterizer works on a wider range of systems, from low-end machines to virtualized environments without GPU access. By avoiding GPU-specific optimizations, Tiny Rasterizer can be more easily adapted to different platforms and architectures
 
-## Philosophies
-Coming soon...
-
 ## Build System
 Note: Currently, only x64 Windows development is supported.
 
 
 ### 1. Prerequisites
-Ensure you have the following installed:
-
-```
-Microsoft C/C++ Build Tools (version 19.41 or later) with the MSVC compiler and Windows SDK.
-(Optional) Clang, if the Windows SDK is already installed.
-```
+Ensure you have the following installed: https://aka.ms/vs/17/release/vs_BuildTools.exe
 
 ### 2. Environment Setup
 Before building, configure your terminal to use the MSVC compiler. This is done by running the vcvarsall.bat x64 script, which is included in the Microsoft C/C++ Build Tools.
