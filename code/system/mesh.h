@@ -103,11 +103,7 @@ struct mesh_t
     vertex_chunk_list_t vertex_chunks;
     vertex_array_t vertex_array;
 
-    vec3_t translation;
-    vec3_t scale;
-    vec3_t rotation;
-
-    // file properties
+    // file info
     char *filename;
     FILETIME last_write_time;
 };

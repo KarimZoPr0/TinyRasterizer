@@ -152,11 +152,11 @@ function void draw_rect(game_color_buffer_t* buffer, S32 x, S32 y, U32 width, U3
     }
 }
 
-function void clear_color_buffer(game_color_buffer_t* buffer, U32 width, U32 height, U32 color)
+function void clear_color_buffer(game_color_buffer_t* buffer, U32 color)
 {
-    for (int row = 0; row < height; ++row)
+    for (int row = 0; row < buffer->height; ++row)
     {
-        for (int col = 0; col < width; ++col)
+        for (int col = 0; col < buffer->width; ++col)
         {
             draw_pixel(buffer, col, row, color);
         }

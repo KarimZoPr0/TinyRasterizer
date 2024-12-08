@@ -20,8 +20,6 @@ int avg_depth_comparator(const void* a, const void* b)
     return 0;
 }
 
-
-#define SHOW_3D 1
 root_function void
 game_update_and_render(app_t* app)
 {
@@ -29,7 +27,6 @@ game_update_and_render(app_t* app)
     U32 triangle_count = 0;
     vec3_t camera_position = {0, 0, 0};
     F32 fov_factor = 500;
-    F32 speed = 0.01f;
 
     game_state_t* state = app->game_state;
     game_color_buffer_t* buffer = app->color_buffer;
@@ -46,9 +43,9 @@ game_update_and_render(app_t* app)
             state->mesh_table->slot_count = 256;
             state->mesh_table->slots = push_array(&state->arena, mesh_slot_t, state->mesh_table->slot_count);
 
-            state->nil_mesh = 0;
+            state->nil_entity.mesh = 0;
             {
-                state->nil_mesh = push_array(&state->meshes_arena, mesh_t, 1);
+                state->nil_entity.mesh = push_array(&state->meshes_arena, mesh_t, 1);
                 vertex_chunk_node_t* vertex_chunk = {0};
                 {
                     vertex_chunk = push_array(&state->vertex_chunk_arena, vertex_chunk_node_t, 1);
@@ -56,8 +53,8 @@ game_update_and_render(app_t* app)
                     vertex_chunk->count = N_MESH_VERTICES;
                     vertex_chunk->v = push_array(&state->vertex_chunk_arena, vec3_t, vertex_chunk->cap);
                     memcpy(vertex_chunk->v, cube_vertices, sizeof(cube_vertices));
-                    state->nil_mesh->vertex_chunks.chunk_count = 1;
-                    state->nil_mesh->vertex_chunks.total_count = N_MESH_VERTICES;
+                    state->nil_entity.mesh->vertex_chunks.chunk_count = 1;
+                    state->nil_entity.mesh->vertex_chunks.total_count = N_MESH_VERTICES;
                 }
                 face_chunk_node_t* face_chunk = {0};
                 {
@@ -66,14 +63,15 @@ game_update_and_render(app_t* app)
                     face_chunk->count = N_MESH_FACES;
                     face_chunk->v = push_array(&state->face_chunk_arena, face_t, face_chunk->cap);
                     memcpy(face_chunk->v, cube_faces, sizeof(cube_faces));
-                    state->nil_mesh->face_chunks.chunk_count = 1;
-                    state->nil_mesh->face_chunks.total_count = N_MESH_FACES;
+                    state->nil_entity.mesh->face_chunks.chunk_count = 1;
+                    state->nil_entity.mesh->face_chunks.total_count = N_MESH_FACES;
                 }
-                state->nil_mesh->vertex_chunks.first = vertex_chunk;
-                state->nil_mesh->face_chunks.first = face_chunk;
+                state->nil_entity.mesh->vertex_chunks.first = vertex_chunk;
+                state->nil_entity.mesh->face_chunks.first = face_chunk;
             }
 
-            state->nil_mesh->scale = (vec3_t){1.0f, 1.0f, 1.0f};
+            state->nil_entity.scale = (vec3_t){1.0f, 1.0f, 1.0f};
+            state->e1.scale = (vec3_t){1.0f, 1.0f, 1.0f};
 
             app->is_initialized = true;
             app->render_mode = RENDER_WIRE;
@@ -111,23 +109,22 @@ game_update_and_render(app_t* app)
 
     //- karim: update
     {
-#if SHOW_3D
-        state->mesh = mesh_from_key(state, "../assets/cube.obj");
+        state->e1.mesh = mesh_from_key(state, "../assets/cube.obj");
 
-        // state->mesh->translation.x += 0.01f;
-        state->mesh->translation.z = 5.0f;
-        // state->mesh->scale.x += 0.002f;
-        state->mesh->rotation.x += 0.01f;
-        state->mesh->rotation.y += 0.01f;
-        state->mesh->rotation.z += 0.01f;
+        // state->e1.translation.x += 0.01f;
+        state->e1.translation.z = 5.0f;
+        // state->e1.scale.x += 0.002f;
+        state->e1.rotation.x += 0.01f;
+        state->e1.rotation.y += 0.01f;
+        state->e1.rotation.z += 0.01f;
 
         //- karim: create a scale matrix that will be used to multiply the mesh vertices
-        mat4_t translation_matrix = mat4_make_translation(state->mesh->translation.x, state->mesh->translation.y,
-                                                          state->mesh->translation.z);
-        mat4_t scale_matrix = mat4_make_scale(state->mesh->scale.x, state->mesh->scale.y, state->mesh->scale.z);
-        mat4_t rotation_matrix_x = mat4_make_rotation_x(state->mesh->rotation.x);
-        mat4_t rotation_matrix_y = mat4_make_rotation_y(state->mesh->rotation.y);
-        mat4_t rotation_matrix_z = mat4_make_rotation_z(state->mesh->rotation.z);
+        mat4_t translation_matrix = mat4_make_translation(state->e1.translation.x, state->e1.translation.y,
+                                                          state->e1.translation.z);
+        mat4_t scale_matrix = mat4_make_scale(state->e1.scale.x, state->e1.scale.y, state->e1.scale.z);
+        mat4_t rotation_matrix_x = mat4_make_rotation_x(state->e1.rotation.x);
+        mat4_t rotation_matrix_y = mat4_make_rotation_y(state->e1.rotation.y);
+        mat4_t rotation_matrix_z = mat4_make_rotation_z(state->e1.rotation.z);
 
         //- karim: create a world matrix combining scale, rotation and translation matrices
         mat4_t world_matrix = mat4_identity();
@@ -137,12 +134,11 @@ game_update_and_render(app_t* app)
         world_matrix = mat4_mul_mat4(rotation_matrix_z, world_matrix);
         world_matrix = mat4_mul_mat4(translation_matrix, world_matrix);
 
-        const U32 num_faces = state->mesh->face_chunks.total_count;
+        U32 num_faces = state->e1.mesh->face_chunks.total_count;
         triangles_to_render = push_array(&state->frame_arena, triangle_t, num_faces);
-        triangle_count = 0;
 
         //- karim: Loop over all face chunks of the mesh
-        for (face_chunk_node_t* face_chunk = state->mesh->face_chunks.first; face_chunk != 0; face_chunk = face_chunk->
+        for (face_chunk_node_t* face_chunk = state->e1.mesh->face_chunks.first; face_chunk != 0; face_chunk = face_chunk->
              next)
         {
             //- karim: Loop over all triangle faces of the mesh
@@ -151,9 +147,9 @@ game_update_and_render(app_t* app)
             {
                 face_t mesh_face = face_chunk->v[i];
                 vec3_t face_vertices[3] = {
-                    get_vertex_by_index(&state->mesh->vertex_chunks, mesh_face.a),
-                    get_vertex_by_index(&state->mesh->vertex_chunks, mesh_face.b),
-                    get_vertex_by_index(&state->mesh->vertex_chunks, mesh_face.c),
+                    get_vertex_by_index(&state->e1.mesh->vertex_chunks, mesh_face.a),
+                    get_vertex_by_index(&state->e1.mesh->vertex_chunks, mesh_face.b),
+                    get_vertex_by_index(&state->e1.mesh->vertex_chunks, mesh_face.c),
                 };
 
                 vec4_t transformed_vertices[3];
@@ -222,37 +218,11 @@ game_update_and_render(app_t* app)
             //- karim: sort the triangles to render by their avg_depth
             qsort(triangles_to_render, triangle_count, sizeof(triangle_t), avg_depth_comparator);
         }
-#else
-    //- karim: Existing 2D update code
-    if (input->up == 1)
-    {
-        state->player.y -= state->offset;
-    }
-    else if (input->down == 1)
-    {
-        state->player.y += state->offset;
-    }
-
-    if (input->right)
-    {
-        state->player.x += state->offset;
-    }
-    else if (input->left)
-    {
-        state->player.x -= state->offset;
-    }
-
-    state->player.x = SDL_clamp(state->player.x, 0, buffer->width - state->player.w);
-    state->player.y = SDL_clamp(state->player.y, 0, buffer->height - state->player.h);
-#endif
     }
 
     //- karim: draw
     {
         draw_grid(buffer);
-
-#if SHOW_3D
-
         const U32 num_triangles = triangle_count;
         for (U32 i = 0; i < num_triangles; i += 2)
         {
@@ -309,8 +279,5 @@ game_update_and_render(app_t* app)
                           ARGB(255, 255, 0, 0));
             }
         }
-#else
-            D_Rect2D(buffer, state->player.x, state->player.y, state->player.w + 10, state->player.h - 10, 0xFFFFAF5F);
-#endif
     }
 }

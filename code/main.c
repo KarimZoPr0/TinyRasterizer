@@ -68,6 +68,8 @@ function void toggleEngineMode()
 
     switch (engine_mode)
     {
+    default:
+        break;
     case MODE_NORMAL:
         memset(app->input, 0, sizeof(game_input_t));
         break;
@@ -75,12 +77,8 @@ function void toggleEngineMode()
         recorded_input_count = recorded_input_index = 0;
         memcpy(&saved_state, app->game_state, sizeof(game_state_t));
         break;
-
     case MODE_PLAYBACK:
         memcpy(app->game_state, &saved_state, sizeof(game_state_t));
-        break;
-
-    default:
         break;
     }
 }
@@ -184,14 +182,17 @@ int main()
             window_width,
             window_height
         );
-        app->color_buffer = &(game_color_buffer_t){color_buffer, window_width, window_height};
+        app->color_buffer = push_array(&app->arena, game_color_buffer_t, 1);
+        app->color_buffer->memory = color_buffer;
+        app->color_buffer->width = window_width;
+        app->color_buffer->height = window_height;
     }
 
     //- karim: set up spall profiler
     app->spall_ctx = spall_init_file("../TinyRasterizer.spall", 1);
     U32 buffer_size = 1 * 1024 * 1024;
     U8* buffer = push_array(&app->arena, U8, buffer_size);
-    app->spall_buffer = (SpallBuffer){.length = buffer_size, .data = buffer};
+    app->spall_buffer = (SpallBuffer){.length = buffer_size, .data = &buffer};
     spall_buffer_init(&app->spall_ctx, &app->spall_buffer);
 
     //- karim: main loop
@@ -225,13 +226,13 @@ int main()
                 {
                     switch (event.type)
                     {
+                    default: ;
                     case SDL_KEYDOWN:
                         doKeyDown(&event.key);
                         break;
                     case SDL_KEYUP:
                         doKeyUp(&event.key);
                         break;
-                    default: ;
                     }
                 }
 
@@ -309,8 +310,9 @@ int main()
             SDL_UpdateTexture(color_buffer_texture, 0, color_buffer, window_width * sizeof(U32));
             SDL_RenderCopy(renderer, color_buffer_texture, 0, 0);
 
+
             //- karim: clear & present
-            clear_color_buffer(app->color_buffer, window_width, window_height, 0xFF000000);
+            clear_color_buffer(app->color_buffer, 0xFF000000);
             SDL_RenderPresent(renderer);
         }
 

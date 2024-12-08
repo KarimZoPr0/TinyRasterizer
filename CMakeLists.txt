@@ -4,7 +4,6 @@ project(TinyRasterizer C)
 set(CMAKE_C_STANDARD 17)
 
 add_library(game SHARED code/game/game.c)
-
 add_executable(TinyRasterizer code/main.c)
 
 find_package(SDL2 CONFIG REQUIRED)

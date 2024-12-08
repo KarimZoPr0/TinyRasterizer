@@ -137,15 +137,28 @@ struct game_input_t
     mouse_t mouse;
 };
 
+
+typedef struct entity_t entity_t;
+struct entity_t
+{
+    mesh_t *mesh;
+
+    // transform prop
+    vec3_t translation;
+    vec3_t scale;
+    vec3_t rotation;
+};
+
 typedef struct game_state_t game_state_t;
 struct game_state_t
 {
     arena_t arena;
     arena_t frame_arena;
 
+    entity_t e1;
+    entity_t nil_entity;
+
     arena_t meshes_arena;
-    mesh_t* mesh;
-    mesh_t *nil_mesh;
     mesh_t *first_free_mesh;
     mesh_table_t* mesh_table;
 
@@ -175,6 +188,7 @@ struct app_t
 
     B32 is_initialized;
 };
+
 
 
 root_function void game_update_and_render(app_t* app);

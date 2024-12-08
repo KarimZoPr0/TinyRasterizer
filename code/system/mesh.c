@@ -66,7 +66,8 @@ function mesh_t* mesh_from_key(game_state_t* state, char* filename)
     arena_t* scratch_arena = scratch_begin();
 
     //- karim: return value
-    mesh_t* existing_mesh = state->nil_mesh;
+    mesh_t* existing_mesh = state->nil_entity.mesh;
+
     B32 file_changed = 0;
 
     //- karim: map key -> hash and slot
@@ -96,7 +97,7 @@ function mesh_t* mesh_from_key(game_state_t* state, char* filename)
     }
 
     FILE* file = fopen(filename, "r");
-    if (file_changed || (existing_mesh == state->nil_mesh && file))
+    if (file_changed || (existing_mesh == state->nil_entity.mesh && file))
     {
         if (existing_node != 0)
         {
@@ -195,10 +196,11 @@ function mesh_t* mesh_from_key(game_state_t* state, char* filename)
 
         //- karim: update the last write time
         existing_mesh->last_write_time = last_write_time;
-        existing_mesh->scale = (vec3_t){1.0f, 1.0f, 1.0f};
     }
 
     fclose(file);
     scratch_end(scratch_arena);
+
+    //- karim: We can safely assume there is an existing mesh
     return existing_mesh;
 }
