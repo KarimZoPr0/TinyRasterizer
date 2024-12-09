@@ -26,7 +26,6 @@ set CFLAGS=
 set LDFLAGS=/link /LIBPATH:"%SDL2_DIR%\lib" SDL2.lib SDL2main.lib
 set DLL_LINK_FLAGS=/DLL /EXPORT:game_update_and_render
 set OUT_FLAG=
-set TEMP_DLL_NAME=libgame_dll.dll
 
 if "%msvc%"=="1" (
     set CC=cl
@@ -59,14 +58,7 @@ if %ERRORLEVEL% neq 0 (
 
 :: Safely rename the new DLL over the old one if it's not locked
 move /Y "%BUILD_DIR%\libgame_new.dll" "%BUILD_DIR%\libgame.dll" >nul 2>&1
-if %ERRORLEVEL% neq 0 (
-    echo DLL is currently in use; will attempt replacement on next build.
-)
 
-:: Copy the DLL for hot reloading
-copy "%BUILD_DIR%\libgame.dll" "%BUILD_DIR%\%TEMP_DLL_NAME%" >nul
-
-:: Build the main application
 echo Building main application...
 %CC% %CFLAGS% code/main.c %OUT_FLAG%"%BUILD_DIR%\TinyRasterizer.exe" %LDFLAGS% >nul 2>&1
 if %ERRORLEVEL% neq 0 (
