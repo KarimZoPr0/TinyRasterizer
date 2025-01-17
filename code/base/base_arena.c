@@ -87,14 +87,14 @@ function void temp_end(temp_t temp)
 
 function void initialize_scratch_arena()
 {
-    static B32 initialized = false;
+    static B32 initialized = 0;
     if (!initialized)
     {
         for (U32 i = 0; i < SCRATCH_ARENA_COUNT; ++i)
         {
             scratch_arenas[i] = arena_alloc(Gigabytes(2));
-            scratch_arenas[i].in_use = false;
-            initialized = true;
+            scratch_arenas[i].in_use = 0;
+            initialized = 1;
         }
     }
 
@@ -102,14 +102,14 @@ function void initialize_scratch_arena()
 
 function arena_t *scratch_begin()
 {
-    local_persist B32 initialized = false;
+    local_persist B32 initialized = 0;
     if (!initialized)
     {
         for (U32 i = 0; i < SCRATCH_ARENA_COUNT; ++i)
         {
             scratch_arenas[i] = arena_alloc(Gigabytes(2));
-            scratch_arenas[i].in_use = false;
-            initialized = true;
+            scratch_arenas[i].in_use = 0;
+            initialized = 1;
         }
     }
 
@@ -118,7 +118,7 @@ function arena_t *scratch_begin()
     {
         if (!scratch_arenas[i].in_use)
         {
-            scratch_arenas[i].in_use = true;
+            scratch_arenas[i].in_use = 1;
             arena = &scratch_arenas[i];
             break;
         }
@@ -129,5 +129,5 @@ function arena_t *scratch_begin()
 function void scratch_end(arena_t *arena)
 {
     arena_reset(arena);
-    arena->in_use = false;
+    arena->in_use = 0;
 }

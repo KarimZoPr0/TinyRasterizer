@@ -2,9 +2,21 @@
 // Created by Karim on 2024-11-12.
 //
 // Vector 2 functions
-function float vec2_length(vec2_t v)
+function F32 vec2_length(vec2_t v)
 {
     return sqrtf(v.x * v.x + v.y * v.y);
+}
+
+function vec2_t vec2_normalize(vec2_t v)
+{
+    vec2_t result = {0};
+    F32 length = vec2_length(v);
+
+    if (length > 0.0f) {
+        result.x = v.x / length;
+        result.y = v.y / length;
+    }
+    return result;
 }
 
 function vec2_t vec2_add(vec2_t a, vec2_t b)
@@ -43,16 +55,29 @@ function vec2_t vec2_div(vec2_t a, F32 factor)
     return result;
 }
 
-function float vec2_dot(vec2_t a, vec2_t b)
+function F32 vec2_dot(vec2_t a, vec2_t b)
 {
     return a.x * b.x + a.y * b.y;
 }
 
 
 // Vector 3 functions
-function float vec3_length(vec3_t v)
+function F32 vec3_length(vec3_t v)
 {
     return sqrtf(v.x * v.x + v.y * v.y + v.z * v.z);
+}
+
+function vec3_t vec3_normalize(vec3_t v)
+{
+    vec3_t result = {0};
+    F32 length = vec3_length(v);
+    if (length > 0.0f)
+    {
+        result.x = v.x / length;
+        result.y = v.y / length;
+        result.z = v.z / length;
+    }
+    return result;
 }
 
 function vec3_t vec3_add(vec3_t a, vec3_t b)
@@ -106,7 +131,7 @@ function vec3_t vec3_cross(vec3_t a, vec3_t b)
     return result;
 }
 
-function float vec3_dot(vec3_t a, vec3_t b)
+function F32 vec3_dot(vec3_t a, vec3_t b)
 {
     return a.x * b.x + a.y * b.y + a.z * b.z;
 }
@@ -267,3 +292,43 @@ function mat4_t mat4_mul_mat4(mat4_t a, mat4_t b)
     return m;
 }
 
+function mat4_t mat4_make_perspective(F32 fov, F32 aspect, F32 znear, F32 zfar)
+{
+    mat4_t m = {{{0}}};
+    m.m[0][0] = 1.0f / (aspect * tanf(fov / 2));
+    m.m[1][1] = 1.0f / tanf(fov / 2);
+    m.m[2][2] = zfar / (zfar - znear);
+    m.m[2][3] = (-zfar * znear) / (zfar - znear);
+    m.m[3][2] = 1.0;
+    return m;
+}
+
+
+function vec4_t mat4_mul_vec4_project(mat4_t mat_proj, vec4_t v)
+{
+    vec4_t result = mat4_mul_vec4(mat_proj, v);
+
+    // perspective divide with original z-value that is now stored in w
+    if (result.w != 0.0f)
+    {
+        result.x /= result.w;
+        result.y /= result.w;
+        result.z /= result.w;
+    }
+    return result;
+}
+
+
+function U32 light_apply_intensity(U32 orginial_color, F32 percentage_factor)
+{
+    if (percentage_factor < 0) percentage_factor = 0;
+    else if (percentage_factor > 1) percentage_factor = 1;
+
+    U32 a = (orginial_color & 0xFF000000);
+    U32 r = (orginial_color & 0x00FF0000) * percentage_factor;
+    U32 g = (orginial_color & 0x0000FF00) * percentage_factor;
+    U32 b = (orginial_color & 0x000000FF) * percentage_factor;
+
+    U32 new_color = a | r & 0x00FF0000 | g & 0x0000FF00 | b & 0x000000FF;
+    return new_color;
+}

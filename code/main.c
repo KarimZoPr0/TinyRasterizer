@@ -93,30 +93,14 @@ function win32_game_code load_game_code(char* source_dll_name, char* temp_dll_na
     if (CompareFileTime(&source_last_write_time, &temp_last_write_time) > 0)
     {
         CopyFile(source_dll_name, temp_dll_name, FALSE);
-        game_code.game_dll = LoadLibraryA(temp_dll_name);
-        if (game_code.game_dll)
-        {
-            game_code.update_and_render = (game_update_and_render_func)GetProcAddress(
-                game_code.game_dll, "game_update_and_render");
-            game_code.last_write_time = source_last_write_time;
-            game_code.is_valid = game_code.update_and_render != 0;
-        }
-    }
-    else
-    {
-        game_code.game_dll = LoadLibraryA(temp_dll_name);
-        if (game_code.game_dll)
-        {
-            game_code.update_and_render = (game_update_and_render_func)GetProcAddress(
-                game_code.game_dll, "game_update_and_render");
-            game_code.last_write_time = source_last_write_time;
-            game_code.is_valid = game_code.update_and_render != 0;
-        }
     }
 
-    if (!game_code.is_valid)
+    game_code.game_dll = LoadLibraryA(temp_dll_name);
+    if (game_code.game_dll)
     {
-        game_code.update_and_render = 0;
+        game_code.update_and_render = (game_update_and_render_func)GetProcAddress(game_code.game_dll, "game_update_and_render");
+        game_code.last_write_time = source_last_write_time;
+        game_code.is_valid = game_code.update_and_render != 0;
     }
 
     return game_code;
@@ -192,7 +176,8 @@ int main()
     app->spall_ctx = spall_init_file("../TinyRasterizer.spall", 1);
     U32 buffer_size = 1 * 1024 * 1024;
     U8* buffer = push_array(&app->arena, U8, buffer_size);
-    app->spall_buffer = (SpallBuffer){.length = buffer_size, .data = &buffer};
+    app->spall_buffer.length = buffer_size;
+    app->spall_buffer.data = &buffer;
     spall_buffer_init(&app->spall_ctx, &app->spall_buffer);
 
     //- karim: main loop

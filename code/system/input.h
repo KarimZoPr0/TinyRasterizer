@@ -5,7 +5,7 @@
 #ifndef INC_3D_GRAPHICS_INPUT_H
 #define INC_3D_GRAPHICS_INPUT_H
 
-function void doKeyDown( SDL_KeyboardEvent *event);
+function void doKeyDown(SDL_KeyboardEvent *event);
 function void doKeyUp(SDL_KeyboardEvent *event);
 
 
