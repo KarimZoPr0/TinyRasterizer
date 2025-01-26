@@ -29,7 +29,7 @@ set OUT_FLAG=
 
 if "%msvc%"=="1" (
     set CC=cl
-    set CFLAGS=/I"%SDL2_DIR%\include" /I"code/external" /std:c17 /EHsc
+    set CFLAGS=/I"%SDL2_DIR%\include" /I"code/external" /std:c11 /EHsc
     if "%debug%"=="1" (
         set CFLAGS=!CFLAGS! /Od /Zi /DDEBUG
     )
@@ -39,7 +39,7 @@ if "%msvc%"=="1" (
     set OUT_FLAG=/Fe
 ) else if "%clang%"=="1" (
     set CC=clang
-    set CFLAGS=-I"%SDL2_DIR%\include" -I"code/external" -std=c17
+    set CFLAGS=-I"%SDL2_DIR%\include" -I"code/external" -std=c11
     if "%debug%"=="1" (
         set CFLAGS=!CFLAGS! -O0 -g -DDEBUG
     )
