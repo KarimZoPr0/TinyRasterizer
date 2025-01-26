@@ -4,3 +4,4 @@
 
 #include "../system/mesh.c"
 #include "../system/draw.c"
+#include "../system/camera.c"

@@ -8,26 +8,11 @@
 #include "../os/os_inc.h"
 #include "../system/system_inc.h"
 #include "../game/game.h"
-#include "../system/camera.h"
 
 #include "../base/base_inc.c"
 #include "../os/os_inc.c"
 #include "../system/system_inc.c"
-#include "../system/camera.c"
 
-double get_time_in_micros(void)
-{
-    static double invfreq;
-    if (!invfreq)
-    {
-        LARGE_INTEGER frequency;
-        QueryPerformanceFrequency(&frequency);
-        invfreq = 1000000.0 / frequency.QuadPart;
-    }
-    LARGE_INTEGER counter;
-    QueryPerformanceCounter(&counter);
-    return counter.QuadPart * invfreq;
-}
 
 int avg_depth_comparator(const void* a, const void* b)
 {

@@ -7,5 +7,6 @@
 
 #include "../system/mesh.h"
 #include "../system/draw.h"
+#include "../system/camera.h"
 
 #endif //SYSTEM_INC_H
