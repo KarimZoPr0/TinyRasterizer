@@ -50,17 +50,17 @@ if "%msvc%"=="1" (
 )
 
 echo Building game DLL...
-%CC% %CFLAGS% /LD code/game/game.c %OUT_FLAG%"%BUILD_DIR%\libgame_new.dll" %LDFLAGS% %DLL_LINK_FLAGS% >nul 2>&1
+%CC% %CFLAGS% /LD code/game/game.c %OUT_FLAG%"%BUILD_DIR%\libgame_new.dll" %LDFLAGS% %DLL_LINK_FLAGS% 
 if %ERRORLEVEL% neq 0 (
     echo Failed to build game DLL.
     exit /b 1
 )
 
 :: Safely rename the new DLL over the old one if it's not locked
-move /Y "%BUILD_DIR%\libgame_new.dll" "%BUILD_DIR%\libgame.dll" >nul 2>&1
+move /Y "%BUILD_DIR%\libgame_new.dll" "%BUILD_DIR%\libgame.dll"
 
 echo Building main application...
-%CC% %CFLAGS% code/main.c %OUT_FLAG%"%BUILD_DIR%\TinyRasterizer.exe" %LDFLAGS% >nul 2>&1
+%CC% %CFLAGS% code/main.c %OUT_FLAG%"%BUILD_DIR%\TinyRasterizer.exe" %LDFLAGS% 
 if %ERRORLEVEL% neq 0 (
     echo Failed to build main application.
     exit /b 1

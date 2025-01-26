@@ -79,6 +79,13 @@ CheckNil(nil,p) ? \
 (SetNil(nil,f),SetNil(nil,l)):\
 ((f)=(f)->next))
 
+#define SLLQueueMoveHead_NZ(nil, f1, l1, f2, next) \
+(CheckNil(nil, f1) && CheckNil(nil, l1) ? \
+((l1)->next = (f2), SetNil(nil, f2), (f2) = (f1)) : \
+SetNil(nil, f2))
+
+
+
 //- karim: singly-linked, singly-headed lists (stacks)
 #define SLLStackPush_N(f,n,next) ((n)->next=(f), (f)=(n))
 #define SLLStackPop_N(f,next) ((f)=(f)->next)
@@ -100,9 +107,57 @@ CheckNil(nil,p) ? \
 #define SLLQueuePush(f,l,n) SLLQueuePush_NZ(0,f,l,n,next)
 #define SLLQueuePushFront(f,l,n) SLLQueuePushFront_NZ(0,f,l,n,next)
 #define SLLQueuePop(f,l) SLLQueuePop_NZ(0,f,l,next)
+#define SLLQueueMoveHead(f1, l1, f2) \
+SLLQueueMoveHead_NZ(0, f1, l1, f2, next)
+
 
 //- karim: singly-linked, singly-headed list helpers
 #define SLLStackPush(f,n) SLLStackPush_N(f,n,next)
 #define SLLStackPop(f) SLLStackPop_N(f,next)
+
+#define MemoryCopy(dest, src, n) memcpy(dest, src, n)
+
+// Helper macros for concatenation
+#define CONCATENATE(arg1, arg2) CONCATENATE1(arg1, arg2)
+#define CONCATENATE1(arg1, arg2) CONCATENATE2(arg1, arg2)
+#define CONCATENATE2(arg1, arg2) arg1##arg2
+
+// Helper macros for counting arguments
+#define COUNT_VARARGS(...) COUNT_VARARGS_IMPL(__VA_ARGS__, 10,9,8,7,6,5,4,3,2,1,0)
+#define COUNT_VARARGS_IMPL(_1,_2,_3,_4,_5,_6,_7,_8,_9,_10,N,...) N
+
+// Helper macros for iterating over arguments
+#define FOR_EACH(macro, obj, ...) \
+CONCATENATE(FOR_EACH_, COUNT_VARARGS(__VA_ARGS__))(macro, obj, __VA_ARGS__)
+
+#define FOR_EACH_1(macro, obj, x) macro(obj, x)
+#define FOR_EACH_2(macro, obj, x, ...) macro(obj, x) FOR_EACH_1(macro, obj, __VA_ARGS__)
+#define FOR_EACH_3(macro, obj, x, ...) macro(obj, x) FOR_EACH_2(macro, obj, __VA_ARGS__)
+#define FOR_EACH_4(macro, obj, x, ...) macro(obj, x) FOR_EACH_3(macro, obj, __VA_ARGS__)
+#define FOR_EACH_5(macro, obj, x, ...) macro(obj, x) FOR_EACH_4(macro, obj, __VA_ARGS__)
+#define FOR_EACH_6(macro, obj, x, ...) macro(obj, x) FOR_EACH_5(macro, obj, __VA_ARGS__)
+#define FOR_EACH_7(macro, obj, x, ...) macro(obj, x) FOR_EACH_6(macro, obj, __VA_ARGS__)
+#define FOR_EACH_8(macro, obj, x, ...) macro(obj, x) FOR_EACH_7(macro, obj, __VA_ARGS__)
+#define FOR_EACH_9(macro, obj, x, ...) macro(obj, x) FOR_EACH_8(macro, obj, __VA_ARGS__)
+#define FOR_EACH_10(macro, obj, x, ...) macro(obj, x) FOR_EACH_9(macro, obj, __VA_ARGS__)
+
+// Macro to zero a single field for non-pointer objects (using .)
+#define ZERO_ONE_FIELD(obj, field) (obj).field = 0;
+
+// Macro to zero a single field for pointer objects (using ->)
+#define ZERO_ONE_FIELD_PTR(obj, field) (obj)->field = 0;
+
+// Main ZeroFieldsIn macro for non-pointer objects
+#define ZeroFieldsIn(obj, ...) \
+do { \
+FOR_EACH(ZERO_ONE_FIELD, obj, __VA_ARGS__) \
+} while (0)
+
+// Main ZeroFieldsIn macro for pointer objects
+#define ZeroFieldsInPtr(obj, ...) \
+do { \
+FOR_EACH(ZERO_ONE_FIELD_PTR, obj, __VA_ARGS__) \
+} while (0)
+
 
 #endif //BASE_CORE_H

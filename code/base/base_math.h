@@ -86,4 +86,5 @@ function mat4_t mat4_mul_mat4(mat4_t a, mat4_t b);
 
 function mat4_t mat4_make_perspective(F32 fov, F32 aspect, F32 znear, F32 zfar);
 function vec4_t mat4_mul_vec4_project(mat4_t mat_proj, vec4_t v);
+function mat4_t mat4_look_at(vec3_t eye, vec3_t target, vec3_t up);
 function U32 light_apply_intensity(U32 orginial_color, F32 percentage_factor);

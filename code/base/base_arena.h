@@ -37,7 +37,11 @@ function void initialize_scratch_arena();
 function arena_t* scratch_begin();
 function void scratch_end(arena_t* arena);
 
-#define SCRATCH_ARENA_COUNT 2
+// System page size (4KB typical)
+#define PAGE_SIZE 4096
+#define SCRATCH_ARENA_COUNT 4
+#define ARENA_RESERVE_SIZE (128 * 1024 * 1024) // 128MB per arena
+
 #define push_array(arena, type, count) (type *)arena_push((arena), sizeof(type)*(count), alignof(type))
 
 

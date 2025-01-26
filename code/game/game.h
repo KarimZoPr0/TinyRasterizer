@@ -187,6 +187,7 @@ struct app_t
     SpallBuffer spall_buffer;
 
     B32 is_initialized;
+    F32 delta_time;
 };
 
 

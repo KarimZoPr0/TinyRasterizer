@@ -63,17 +63,18 @@ function vec3_t get_vertex_by_index(vertex_chunk_list_t* vertex_chunks, U64 idx)
 
 function mesh_t* mesh_from_key(game_state_t* state, char* filename)
 {
- arena_t* scratch_arena = scratch_begin();
- 
+ FILE* file = fopen(filename, "r");
+ if (file == 0)  return state->nil_entity.mesh;
+
  //- karim: return value
- mesh_t* existing_mesh = state->nil_entity.mesh;
- 
+ mesh_t* existing_mesh = 0;
+
  B32 file_changed = 0;
- 
+
  //- karim: map key -> hash and slot
  U64 hash = hash_from_string(filename);
- U64 slot_idx = hash % state->mesh_table->slot_count;
- 
+ U64 slot_idx = hash & state->mesh_table->slot_count - 1;
+
  //- karim: find existing node in the table
  mesh_slot_t* slot = &state->mesh_table->slots[slot_idx];
  mesh_node_t* existing_node = 0;
@@ -86,46 +87,38 @@ function mesh_t* mesh_from_key(game_state_t* state, char* filename)
    break;
   }
  }
- 
+
+ //- karim: Existing node not found? -> Allocate node
+ if(existing_node == 0)
+ {
+  existing_node = push_array(&state->meshes_arena, mesh_node_t, 1);
+  existing_mesh = &existing_node->v;
+  existing_mesh->filename = filename;
+  SLLQueuePush(slot->first, slot->last, existing_node);
+ }
+
  //- karim: has file changed
  FILETIME last_write_time = get_last_write_time(filename);
- file_changed = existing_node && CompareFileTime(&existing_node->v.last_write_time, &last_write_time) != 0;
- 
- FILE* file = fopen(filename, "r");
- if (file_changed || (existing_mesh == state->nil_entity.mesh && file))
+ file_changed = CompareFileTime(&existing_node->v.last_write_time, &last_write_time) != 0;
+
+
+ if (file_changed && file)
  {
-  if (existing_node != 0)
+
+  //- karim: free vertex chunks
+  if (existing_mesh->vertex_chunks.first != 0)
   {
-   existing_mesh = &existing_node->v;
-   
-   //- karim: free vertex chunks
-   if (existing_mesh->vertex_chunks.first != 0)
-   {
-    existing_mesh->vertex_chunks.last->next = state->first_free_vertex_chunk;
-    state->first_free_vertex_chunk = existing_mesh->vertex_chunks.first;
-    existing_mesh->vertex_chunks.first = existing_mesh->vertex_chunks.last = 0;
-    existing_mesh->vertex_chunks.total_count = existing_mesh->vertex_chunks.chunk_count = 0;
-   }
-   
-   //- karim: free face chunks
-   if (existing_mesh->face_chunks.first != 0)
-   {
-    existing_mesh->face_chunks.last->next = state->first_free_face_chunk;
-    state->first_free_face_chunk = existing_mesh->face_chunks.first;
-    existing_mesh->face_chunks.first = existing_mesh->face_chunks.last = 0;
-    existing_mesh->face_chunks.total_count = existing_mesh->face_chunks.chunk_count = 0;
-   }
+   SLLQueueMoveHead(existing_mesh->vertex_chunks.first, existing_mesh->vertex_chunks.last, state->first_free_vertex_chunk);
+   ZeroFieldsIn(existing_mesh->vertex_chunks, first, last, total_count, chunk_count);
   }
-  else
+
+  //- karim: free face chunks
+  if (existing_mesh->face_chunks.first != 0)
   {
-   //- karim: allocate a new mesh & node
-   existing_node = push_array(&state->meshes_arena, mesh_node_t, 1);
-   existing_mesh = &existing_node->v;
-   existing_mesh->filename = filename;
-   existing_mesh->last_write_time = last_write_time;
-   SLLQueuePush(slot->first, slot->last, existing_node);
+   SLLQueueMoveHead(existing_mesh->face_chunks.first, existing_mesh->face_chunks.last, state->first_free_face_chunk);
+   ZeroFieldsIn(existing_mesh->face_chunks, first, last, total_count, chunk_count);
   }
-  
+
   //- karim: parse the file
   char line[1024];
   while (fgets(line, sizeof(line), file))
@@ -147,8 +140,7 @@ function mesh_t* mesh_from_key(game_state_t* state, char* filename)
      {
       state->first_free_vertex_chunk = state->first_free_vertex_chunk->next;
      }
-     n->next = 0;
-     n->count = 0;
+     ZeroFieldsInPtr(n, next, count);
      SLLQueuePush(existing_mesh->vertex_chunks.first, existing_mesh->vertex_chunks.last, n);
      existing_mesh->vertex_chunks.chunk_count++;
     }
@@ -173,8 +165,7 @@ function mesh_t* mesh_from_key(game_state_t* state, char* filename)
      {
       state->first_free_face_chunk = state->first_free_face_chunk->next;
      }
-     n->next = 0;
-     n->count = 0;
+     ZeroFieldsInPtr(n, next, count);
      SLLQueuePush(existing_mesh->face_chunks.first, existing_mesh->face_chunks.last, n);
      existing_mesh->face_chunks.chunk_count++;
     }
@@ -189,14 +180,11 @@ function mesh_t* mesh_from_key(game_state_t* state, char* filename)
     face->color = 0xFFFFFFFF;
    }
   }
-  
-  //- karim: update the last write time
   existing_mesh->last_write_time = last_write_time;
  }
- 
+
  if (file )fclose(file);
- scratch_end(scratch_arena);
- 
+
  //- karim: We can safely assume there is an existing mesh
  return existing_mesh;
 }

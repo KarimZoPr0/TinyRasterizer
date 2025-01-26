@@ -31,3 +31,7 @@ os_release(void *ptr, U64 size)
 {
     munmap(ptr, size);
 }
+
+function U64 get_page_size(void) {
+    return sysconf(_SC_PAGESIZE);
+}

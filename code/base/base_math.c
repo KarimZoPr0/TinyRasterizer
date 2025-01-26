@@ -12,7 +12,8 @@ function vec2_t vec2_normalize(vec2_t v)
     vec2_t result = {0};
     F32 length = vec2_length(v);
 
-    if (length > 0.0f) {
+    if (length > 0.0f)
+    {
         result.x = v.x / length;
         result.y = v.y / length;
     }
@@ -244,6 +245,7 @@ function mat4_t mat4_make_rotation_y(F32 angle)
     m.m[2][2] = c;
     return m;
 }
+
 function mat4_t mat4_make_rotation_z(F32 angle)
 {
     F32 c = cosf(angle);
@@ -316,6 +318,24 @@ function vec4_t mat4_mul_vec4_project(mat4_t mat_proj, vec4_t v)
         result.z /= result.w;
     }
     return result;
+}
+
+function mat4_t mat4_look_at(vec3_t eye, vec3_t target, vec3_t up)
+{
+    vec3_t z = vec3_normalize(vec3_sub(target, eye));
+    vec3_t x = vec3_normalize(vec3_cross(up, z));
+    vec3_t y = vec3_cross(z, x);
+
+    mat4_t view_matrix = {
+        {
+            {x.x, x.y, x.z, -vec3_dot(x, eye)},
+            {y.x, y.y, y.z, -vec3_dot(y, eye)},
+            {z.x, z.y, z.z, -vec3_dot(z, eye)},
+            {0, 0, 0, 1}
+        }
+    };
+
+    return view_matrix;
 }
 
 

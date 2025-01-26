@@ -185,6 +185,19 @@ int main()
     U32 time_to_wait = 0;
     while (is_running)
     {
+
+        //- karim: cap frame rate
+        time_to_wait = FRAME_TARGET_TIME - (SDL_GetTicks() - previous_frame_time);
+        if (time_to_wait > 0 && time_to_wait <= FRAME_TARGET_TIME)
+        {
+            SDL_Delay(time_to_wait);
+        }
+
+        app->delta_time = (SDL_GetTicks() - previous_frame_time) / 1000.0;
+
+        previous_frame_time = SDL_GetTicks();
+
+
         //- karim: Hotreload
         FILETIME new_dll_write_time = get_last_write_time(source_dll);
         if (CompareFileTime(&new_dll_write_time, &game_code.last_write_time) != 0)
@@ -245,10 +258,10 @@ int main()
                                                              window_width, window_height);
                     break;
                 case SDL_WINDOWEVENT_FOCUS_GAINED:
-                    SDL_SetWindowOpacity(window, 1.0f);
+                    // SDL_SetWindowOpacity(window, 1.0f);
                     break;
                 case SDL_WINDOWEVENT_FOCUS_LOST:
-                    SDL_SetWindowOpacity(window, 0.5f);
+                    // SDL_SetWindowOpacity(window, 0.5f);
                     break;
                 default:
                     break;
@@ -283,6 +296,7 @@ int main()
             }
         }
 
+
         //- karim: update & render
         if (game_code.is_valid)
         {
@@ -300,14 +314,6 @@ int main()
             clear_color_buffer(app->color_buffer, 0xFF000000);
             SDL_RenderPresent(renderer);
         }
-
-        //- karim: cap frame rate
-        time_to_wait = FRAME_TARGET_TIME - (SDL_GetTicks() - previous_frame_time);
-        if (time_to_wait > 0 && time_to_wait <= FRAME_TARGET_TIME)
-        {
-            SDL_Delay(time_to_wait);
-        }
-        previous_frame_time = SDL_GetTicks();
 
         //- karim: flush spall buffer
         spall_buffer_quit(&app->spall_ctx, &app->spall_buffer);
