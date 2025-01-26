@@ -20,7 +20,7 @@ GPUs offer advanced, high-performance features, but their complexity can oversha
 Not every device has a modern GPU or reliable driver support. CPU-based rendering ensures Tiny Rasterizer works on a wider range of systems, from low-end machines to virtualized environments without GPU access. By avoiding GPU-specific optimizations, Tiny Rasterizer can be more easily adapted to different platforms and architectures
 
 ## Build System
-Note: Currently, only x64 Windows development is supported.
+Note: Currently, only Windows development is supported.
 
 
 ### 1. Prerequisites
