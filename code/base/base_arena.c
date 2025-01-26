@@ -1,4 +1,3 @@
-// base_arena.c
 #include <assert.h>
 
 // Thread-local storage
@@ -89,7 +88,6 @@ void temp_end(temp_t temp) {
 }
 
 arena_t* scratch_begin(void) {
-    // Lazy initialization
     if (!scratch_initialized) {
         for (U32 i = 0; i < SCRATCH_ARENA_COUNT; i++) {
             scratch_arenas[i] = arena_alloc(ARENA_RESERVE_SIZE);
@@ -98,7 +96,6 @@ arena_t* scratch_begin(void) {
         scratch_initialized = 1;
     }
 
-    // Find first available arena
     for (U32 i = 0; i < SCRATCH_ARENA_COUNT; i++) {
         if (!scratch_arenas[i].in_use) {
             scratch_arenas[i].in_use = 1;
