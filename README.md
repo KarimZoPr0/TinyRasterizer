@@ -8,6 +8,7 @@
 - [Showcase](#showcase)
   - [Code Hotreloading + Record & Rewind](#code-hotreloading--record--rewind)
   - [Mesh Hotreloading](#mesh-hotreloading)
+  - [Flat Shading & Light](#flat-shading--light)
 
 ## What is Tiny Rasterizer
 Tiny Rasterizer is a software renderer, meaning it processes graphics entirely using the CPU rather than relying on specialized GPU hardware. Software rendering has a rich history in computer graphics and remains relevant for its flexibility, educational value, and independence from hardware constraints.
@@ -72,3 +73,7 @@ If the build completes successfully, a `build` folder will be created at the roo
 
 ### Mesh Hotreloading
 ![hot edit blend](https://github.com/user-attachments/assets/297bcffb-7ad5-4f69-b3a4-29f3ecfb0ce5)
+
+### Flat Shading & Light
+<img width="1280" alt="image" src="https://github.com/user-attachments/assets/edc2aa36-354b-4db1-a5b3-635828cbf578" />
+
