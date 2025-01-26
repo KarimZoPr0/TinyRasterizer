@@ -156,7 +156,7 @@ game_update_and_render(app_t* app)
         //- karim: Create the view matrix
         vec3_t up_direction = {0, 1, 0};
 
-        //- karim: Initialize the target looking at the psoitive z-axis
+        //- karim: Initialize the target looking at the positive z-axis
         vec3_t target = {0,0,1};
         mat4_t camera_yaw_rotation = mat4_make_rotation_y(camera.yaw);
         camera.direction = vec3_from_vec4(mat4_mul_vec4(camera_yaw_rotation, vec4_from_vec3(target)));

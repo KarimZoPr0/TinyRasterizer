@@ -197,7 +197,6 @@ int main()
 
         previous_frame_time = SDL_GetTicks();
 
-
         //- karim: Hotreload
         FILETIME new_dll_write_time = get_last_write_time(source_dll);
         if (CompareFileTime(&new_dll_write_time, &game_code.last_write_time) != 0)
@@ -308,7 +307,6 @@ int main()
             //- karim: render color buffer
             SDL_UpdateTexture(color_buffer_texture, 0, color_buffer, window_width * sizeof(U32));
             SDL_RenderCopy(renderer, color_buffer_texture, 0, 0);
-
 
             //- karim: clear & present
             clear_color_buffer(app->color_buffer, 0xFF000000);
