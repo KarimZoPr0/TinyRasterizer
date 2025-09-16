@@ -1,4 +1,5 @@
 #define SDL_MAIN_HANDLED
+#define BUILDING_HOST
 
 #include "external/spall.h"
 
@@ -56,11 +57,7 @@ global U32 recorded_input_count;
 global U32 recorded_input_index;
 global game_state_t saved_state;
 
-global SpallProfile spall_ctx;
-global SpallBuffer spall_buffer;
-
 app_t* app;
-
 
 function void toggleEngineMode()
 {
@@ -127,38 +124,22 @@ int main()
     char* temp_dll = "libgame_dll.dll";
     win32_game_code game_code = load_game_code(source_dll, temp_dll);
 
-    //- karim: set up state
-    game_state_t* state = {0};
-    {
-        arena_t arena = arena_alloc(Gigabytes(64));
-        arena_t frame_arena = arena_alloc(Gigabytes(8));
-        arena_t meshes_arena = arena_alloc(Gigabytes(8));
-        arena_t vertex_chunk_arena = arena_alloc(Gigabytes(8));
-        arena_t face_chunk_arena = arena_alloc(Gigabytes(8));
-
-        state = push_array(&arena, game_state_t, 1);
-        state->arena = arena;
-        state->frame_arena = frame_arena;
-        state->meshes_arena = meshes_arena;
-        state->vertex_chunk_arena = vertex_chunk_arena;
-        state->face_chunk_arena = face_chunk_arena;
-    }
-
     //- karim: set up app
     {
-        arena_t arena = arena_alloc(Gigabytes(64));
-        app = push_array(&arena, app_t, 1);
+        arena_t *arena = arena_create();
+        app = push_array(arena, app_t, 1);
+        arena_t* frame_arena = arena_create();
         app->arena = arena;
-        app->game_state = state;
+        app->frame_arena = frame_arena;
 
         //-karim: set up input
-        app->input = push_array(&app->arena, game_input_t, 1);
-        recorded_inputs = push_array(&app->arena, game_input_t, MAX_INPUT_RECORDS);
+        app->input = push_array(app->arena, game_input_t, 1);
+        recorded_inputs = push_array(app->arena, game_input_t, MAX_INPUT_RECORDS);
 
         //- karim: set up color buffer
         SDL_DisplayMode display_mode;
         SDL_GetCurrentDisplayMode(0, &display_mode);
-        color_buffer = push_array(&app->arena, U32, display_mode.w * display_mode.h);
+        color_buffer = push_array(app->arena, U32, display_mode.w * display_mode.h);
         color_buffer_texture = SDL_CreateTexture(
             renderer,
             SDL_PIXELFORMAT_ARGB8888,
@@ -166,36 +147,36 @@ int main()
             window_width,
             window_height
         );
-        app->color_buffer = push_array(&app->arena, game_color_buffer_t, 1);
+        app->color_buffer = push_array(app->arena, game_color_buffer_t, 1);
         app->color_buffer->memory = color_buffer;
         app->color_buffer->width = window_width;
         app->color_buffer->height = window_height;
     }
 
-    //- karim: set up spall profiler
-    app->spall_ctx = spall_init_file("../TinyRasterizer.spall", 1);
-    U32 buffer_size = 1 * 1024 * 1024;
-    U8* buffer = push_array(&app->arena, U8, buffer_size);
-    app->spall_buffer.length = buffer_size;
-    app->spall_buffer.data = &buffer;
-    spall_buffer_init(&app->spall_ctx, &app->spall_buffer);
+    ProfileInit("Main");
+    ProfileInitThread();
 
     //- karim: main loop
-    U32 previous_frame_time = 0;
+    U32 previous_frame_time = SDL_GetTicks();
     U32 time_to_wait = 0;
     while (is_running)
     {
+        //- karim: clear frame arena
+        arena_clear(app->frame_arena);
 
-        //- karim: cap frame rate
-        time_to_wait = FRAME_TARGET_TIME - (SDL_GetTicks() - previous_frame_time);
+        // Cap frame rate
+        U32 current_time = SDL_GetTicks();
+        U32 frame_elapsed_time = current_time - previous_frame_time;
+        time_to_wait = FRAME_TARGET_TIME > frame_elapsed_time ? FRAME_TARGET_TIME - frame_elapsed_time : 0;
         if (time_to_wait > 0 && time_to_wait <= FRAME_TARGET_TIME)
         {
             SDL_Delay(time_to_wait);
         }
 
-        app->delta_time = (SDL_GetTicks() - previous_frame_time) / 1000.0;
-
-        previous_frame_time = SDL_GetTicks();
+        // Recalculate current time after the delay
+        current_time = SDL_GetTicks();
+        app->delta_time = (F32)(current_time - previous_frame_time) / 1000.0;
+        previous_frame_time = current_time;
 
         //- karim: Hotreload
         FILETIME new_dll_write_time = get_last_write_time(source_dll);
@@ -213,6 +194,7 @@ int main()
             game_code.update_and_render = 0;
             game_code = load_game_code(source_dll, temp_dll);
         }
+
 
         //- karim: process input
         {
@@ -295,7 +277,6 @@ int main()
             }
         }
 
-
         //- karim: update & render
         if (game_code.is_valid)
         {
@@ -313,15 +294,11 @@ int main()
             SDL_RenderPresent(renderer);
         }
 
-        //- karim: flush spall buffer
-        spall_buffer_quit(&app->spall_ctx, &app->spall_buffer);
+        ProfileQuitThread();
 
-        //- karim: clear frame arena
-        arena_clear(&state->frame_arena);
     }
+    ProfileQuit();
 
-    //- karim: clean up
-    spall_quit(&spall_ctx);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();

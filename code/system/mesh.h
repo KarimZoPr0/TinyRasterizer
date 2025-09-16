@@ -11,6 +11,9 @@ struct face_t
     U32 a;
     U32 b;
     U32 c;
+    tex2_t a_uv;
+    tex2_t b_uv;
+    tex2_t c_uv;
     U32 color;
 };
 
@@ -18,6 +21,7 @@ typedef struct triangle_t triangle_t;
 struct triangle_t
 {
     vec2_t points[3];
+    tex2_t texcoords[3];
     U32 color;
     F32 avg_depth;
 };
@@ -88,13 +92,14 @@ struct face_array_t
 {
     face_t *v;
     U64 count;
-    U32 capacity;
 };
 
 //- karim: mesh type
 typedef struct mesh_t mesh_t;
 struct mesh_t
 {
+    arena_t *arena;
+
     // face
     face_chunk_list_t face_chunks;
     face_array_t face_array;
@@ -106,6 +111,7 @@ struct mesh_t
     // file info
     char *filename;
     FILETIME last_write_time;
+
 };
 
 typedef struct mesh_node_t mesh_node_t;
@@ -134,11 +140,15 @@ struct game_state_t;
 
 function vec3_t get_vertex_by_index(vertex_chunk_list_t* vertex_chunks, U64 idx);
 function mesh_t* mesh_from_key(game_state_t *state, char* filename);
+function mesh_t *mesh_from_key_new(game_state_t *state, char *filename);
 
-#define N_MESH_VERTICES 8
-extern vec3_t cube_vertices[N_MESH_VERTICES];
 
-#define N_MESH_FACES (6 * 2)
-extern face_t cube_faces[N_MESH_FACES];
+#define N_CUBE_VERTICES 8
+extern vec3_t cube_vertices[N_CUBE_VERTICES];
+
+#define N_CUBE_FACES (6 * 2)
+extern face_t cube_faces[N_CUBE_FACES];
+
+
 
 #endif //INC_3D_GRAPHICS_MESH_H

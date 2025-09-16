@@ -12,20 +12,21 @@
 #define root_function __declspec(dllexport)
 #endif
 
-typedef enum cull_mode cull_mode;
-enum cull_mode
+typedef U64 cull_flags;
+
+enum cull_flags
 {
-    CULL_NONE,
-    CULL_BACKFACE
+    CULL_FLAG_BACKFACE = (1 << 0),
 };
 
-typedef enum render_mode render_mode;
-enum render_mode
+typedef U64 render_flags;
+
+enum render_flags
 {
-    RENDER_WIRE,
-    RENDER_WIRE_VERTEX,
-    RENDER_FILL_TRIANGLE,
-    RENDER_FILL_TRIANGLE_WIRE
+    RENDER_FLAG_VERTEX = (1 << 0),
+    RENDER_FLAG_WIRE = (1 << 1),
+    RENDER_FLAG_FILL = (1 << 2),
+    RENDER_FLAG_TEXTURE = (1 << 3),
 };
 
 typedef struct mouse_t mouse_t;
@@ -139,9 +140,10 @@ struct game_input_t
 
 
 typedef struct entity_t entity_t;
+
 struct entity_t
 {
-    mesh_t *mesh;
+    mesh_t* mesh;
 
     // transform prop
     vec3_t translation;
@@ -149,39 +151,51 @@ struct entity_t
     vec3_t rotation;
 };
 
-typedef struct game_state_t game_state_t;
+typedef game_state_t game_state_t;
+
 struct game_state_t
 {
-    arena_t arena;
-    arena_t frame_arena;
+    arena_t* arena;
 
     entity_t e1;
     entity_t nil_entity;
 
-    arena_t meshes_arena;
-    mesh_t *first_free_mesh;
+    arena_t* meshes_arena;
+    mesh_t* first_free_mesh;
     mesh_table_t* mesh_table;
 
-    arena_t vertex_chunk_arena;
-    vertex_chunk_node_t *first_free_vertex_chunk;
-    arena_t face_chunk_arena;
-    face_chunk_node_t *first_free_face_chunk;
+    arena_t* vertex_chunk_arena;
+    vertex_chunk_node_t* first_free_vertex_chunk;
+    arena_t* face_chunk_arena;
+    face_chunk_node_t* first_free_face_chunk;
 
     vec3_t rotation;
 };
 
+typedef struct camera_t camera_t;
+
+struct camera_t
+{
+    vec3_t position;
+    vec3_t direction;
+    vec3_t forward_velocity;
+    F32 yaw;
+};
+
 
 typedef struct app_t app_t;
+
 struct app_t
 {
-    arena_t arena;
+    arena_t* arena;
+    arena_t* frame_arena;
 
     game_color_buffer_t* color_buffer;
     game_state_t* game_state;
     game_input_t* input;
 
-    cull_mode cull_mode;
-    render_mode render_mode;
+    cull_flags cull_flags;
+    render_flags render_flags;
 
     SpallProfile spall_ctx;
     SpallBuffer spall_buffer;
@@ -189,7 +203,6 @@ struct app_t
     B32 is_initialized;
     F32 delta_time;
 };
-
 
 
 root_function void game_update_and_render(app_t* app);

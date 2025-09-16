@@ -6,6 +6,11 @@ cd /D "%~dp0"
 set SDL2_DIR=%~dp0code\external\SDL2-x64
 set BUILD_DIR=%~dp0build
 
+set TIMINGS_FILE=%BASE_DIR%timings.ctm
+
+rem Path to ctime.exe (assumed to be in the base directory)
+set CTIME=%BASE_DIR%ctime.exe
+
 :: Ensure the build directory exists
 if not exist "%BUILD_DIR%" (
     mkdir "%BUILD_DIR%"
@@ -49,10 +54,31 @@ if "%msvc%"=="1" (
     set OUT_FLAG=-o
 )
 
+rem ===============================
+rem Begin Timing with ctime
+rem ===============================
+echo Starting timing...
+call "%CTIME%" -begin "%TIMINGS_FILE%"
+if errorlevel 1 (
+    echo ERROR: Failed to start timing with ctime.
+    exit /b 1
+)
+
+
 echo Building game DLL...
-%CC% %CFLAGS% /LD code/game/game.c %OUT_FLAG%"%BUILD_DIR%\libgame_new.dll" %LDFLAGS% %DLL_LINK_FLAGS% 
+%CC% %CFLAGS% /LD code/game/game.c %OUT_FLAG%"%BUILD_DIR%\libgame_new.dll" %LDFLAGS% %DLL_LINK_FLAGS%
 if %ERRORLEVEL% neq 0 (
     echo Failed to build game DLL.
+    exit /b 1
+)
+
+rem ===============================
+rem End Timing with ctime
+rem ===============================
+echo Ending timing...
+call "%CTIME%" -end "%TIMINGS_FILE%" %BUILD_ERROR%
+if errorlevel 1 (
+    echo ERROR: Failed to end timing with ctime.
     exit /b 1
 )
 
@@ -60,7 +86,7 @@ if %ERRORLEVEL% neq 0 (
 move /Y "%BUILD_DIR%\libgame_new.dll" "%BUILD_DIR%\libgame.dll"
 
 echo Building main application...
-%CC% %CFLAGS% code/main.c %OUT_FLAG%"%BUILD_DIR%\TinyRasterizer.exe" %LDFLAGS% 
+%CC% %CFLAGS% code/main.c %OUT_FLAG%"%BUILD_DIR%\TinyRasterizer.exe" %LDFLAGS%
 if %ERRORLEVEL% neq 0 (
     echo Failed to build main application.
     exit /b 1

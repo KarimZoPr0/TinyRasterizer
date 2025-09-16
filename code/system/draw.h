@@ -20,6 +20,12 @@ function void draw_pixel( game_color_buffer_t *buffer, S32 x, S32 y, U32 color);
 function void draw_line( game_color_buffer_t *buffer, S32 x0, S32 y0, S32 x1, S32 y1, U32 color);
 function void draw_triangle( game_color_buffer_t *buffer, S32 x0, S32 y0, S32 x1, S32 y1, S32 x2, S32 y2, U32 color);
 function void draw_filled_triangle( game_color_buffer_t *buffer, S32 x0, S32 y0, S32 x1, S32 y1, S32 x2, S32 y2, U32 color);
+function void draw_textured_triangle(
+    game_color_buffer_t *buffer,
+    S32 x0, S32 y0, F32 u0, F32 v0,
+    S32 x1, S32 y1, F32 u1, F32 v1,
+    S32 x2, S32 y2, F32 u2, F32 v2,
+    U32 *texture);
 function void draw_rect( game_color_buffer_t *buffer, S32 x, S32 y, U32 width, U32 height, U32 color );
 function void clear_color_buffer(game_color_buffer_t* buffer, U32 color);
 // void render_color_buffer( uint32_t *color_buffer);

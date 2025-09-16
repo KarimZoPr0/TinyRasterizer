@@ -76,6 +76,7 @@ function KeyCode mapSDLScancodeToKeyCode(SDL_Scancode scancode)
 
 #define MAX_KEYBOARD_KEYS 350
 
+
 function void doKeyDown(SDL_KeyboardEvent* event)
 {
     if (event->repeat == 0 && event->keysym.scancode < MAX_KEYBOARD_KEYS)

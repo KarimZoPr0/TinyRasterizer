@@ -47,3 +47,32 @@ FILETIME get_last_write_time(char* filename)
 
     return LastWriteTime;
 }
+
+
+static U32
+os_get_microseconds()
+{
+    // Cache the frequency value after first call
+    static LARGE_INTEGER frequency;
+    static int frequencyInitialized = 0;
+    if (!frequencyInitialized) {
+        if (!QueryPerformanceFrequency(&frequency)) {
+            return 0;
+        }
+        frequencyInitialized = 1;
+    }
+
+    LARGE_INTEGER counter;
+    QueryPerformanceCounter(&counter);
+
+    // Multiply by 1,000,000 to convert seconds to microseconds
+    return (U64)((counter.QuadPart * 1000000ULL) / frequency.QuadPart);
+}
+
+static U32
+os_get_current_thread_id()
+{
+    U32 result = GetCurrentThreadId();
+    return result;
+}
+

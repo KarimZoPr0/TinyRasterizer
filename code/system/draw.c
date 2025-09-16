@@ -89,6 +89,18 @@ function void draw_filled_triangle(game_color_buffer_t* buffer, S32 x0, S32 y0, 
     }
 }
 
+function void draw_textured_triangle(
+    game_color_buffer_t *buffer,
+    S32 x0, S32 y0, F32 u0, F32 v0,
+    S32 x1, S32 y1, F32 u1, F32 v1,
+    S32 x2, S32 y2, F32 u2, F32 v2,
+    U32 *texture)
+{
+    // TODO:
+    // Loop all the pixels of the triangle to render them based on the color
+    // that comes from the texture
+}
+
 function void draw_triangle(game_color_buffer_t* buffer, S32 x0, S32 y0, S32 x1, S32 y1, S32 x2, S32 y2, U32 color)
 {
     draw_line(buffer, x0, y0, x1, y1, color);

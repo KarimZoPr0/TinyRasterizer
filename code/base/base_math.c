@@ -352,3 +352,16 @@ function U32 light_apply_intensity(U32 orginial_color, F32 percentage_factor)
     U32 new_color = a | r & 0x00FF0000 | g & 0x0000FF00 | b & 0x000000FF;
     return new_color;
 }
+
+
+mat4_t mat4_make_shear_x(float k) {
+    mat4_t m = mat4_identity();
+    m.m[0][1] = k; // Shear in x-direction based on y
+    return m;
+}
+
+mat4_t mat4_make_shear_y(float k) {
+    mat4_t m = mat4_identity();
+    m.m[1][0] = k; // Shear in y-direction based on x
+    return m;
+}
