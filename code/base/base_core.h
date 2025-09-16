@@ -35,14 +35,31 @@ typedef S64      B64;
 typedef float    F32;
 typedef double   F64;
 
-#define Bytes(n)      (n)
-#define Kilobytes(n)  (n << 10)
-#define Megabytes(n)  (n << 20)
-#define Gigabytes(n)  (((U64)n) << 30)
-#define Terabytes(n)  (((U64)n) << 40)
+#define B(n)      (n)
+#define KB(n)  (n << 10)
+#define MB(n)  (n << 20)
+#define GB(n)  (((U64)n) << 30)
+#define TB(n)  (((U64)n) << 40)
 
 #define Swap(T,a,b) do{T t__ = a; a = b; b = t__;}while(0)
 #define ARGB(a, r, g, b) ((U32)((a << 24) | (r << 16) | (g << 8) | (b)))
+
+#define MAX(a,b) ((a) > (b) ? (a) : (b))
+#define MIN(a,b) ((a) < (b) ? (a) : (b))
+
+#define ArrayCount(a) (sizeof(a) / sizeof((a)[0]))
+
+//- karim: memory copy/set operations
+
+#define MemoryCopy(dst, src, size) memcpy((dst), (src), (size))
+#define MemoryMove(dst, src, size) memmove((dst), (src), (size))
+#define MemorySet(dst, byte, size) memset((dst), (byte), (size))
+
+#define MemoryZero(ptr, size) MemorySet((ptr), 0, (size))
+#define MemoryZeroStruct(ptr) MemoryZero((ptr), sizeof(*(ptr)))
+#define MemoryZeroArray(arr)  MemoryZero((arr), sizeof(arr))
+
+#define plex struct
 
 ////////////////////////////////
 //~ karim: Linked List Building Macros
@@ -84,8 +101,6 @@ CheckNil(nil,p) ? \
 ((l1)->next = (f2), SetNil(nil, f2), (f2) = (f1)) : \
 SetNil(nil, f2))
 
-
-
 //- karim: singly-linked, singly-headed lists (stacks)
 #define SLLStackPush_N(f,n,next) ((n)->next=(f), (f)=(n))
 #define SLLStackPop_N(f,next) ((f)=(f)->next)
@@ -114,50 +129,6 @@ SLLQueueMoveHead_NZ(0, f1, l1, f2, next)
 //- karim: singly-linked, singly-headed list helpers
 #define SLLStackPush(f,n) SLLStackPush_N(f,n,next)
 #define SLLStackPop(f) SLLStackPop_N(f,next)
-
-#define MemoryCopy(dest, src, n) memcpy(dest, src, n)
-
-// Helper macros for concatenation
-#define CONCATENATE(arg1, arg2) CONCATENATE1(arg1, arg2)
-#define CONCATENATE1(arg1, arg2) CONCATENATE2(arg1, arg2)
-#define CONCATENATE2(arg1, arg2) arg1##arg2
-
-// Helper macros for counting arguments
-#define COUNT_VARARGS(...) COUNT_VARARGS_IMPL(__VA_ARGS__, 10,9,8,7,6,5,4,3,2,1,0)
-#define COUNT_VARARGS_IMPL(_1,_2,_3,_4,_5,_6,_7,_8,_9,_10,N,...) N
-
-// Helper macros for iterating over arguments
-#define FOR_EACH(macro, obj, ...) \
-CONCATENATE(FOR_EACH_, COUNT_VARARGS(__VA_ARGS__))(macro, obj, __VA_ARGS__)
-
-#define FOR_EACH_1(macro, obj, x) macro(obj, x)
-#define FOR_EACH_2(macro, obj, x, ...) macro(obj, x) FOR_EACH_1(macro, obj, __VA_ARGS__)
-#define FOR_EACH_3(macro, obj, x, ...) macro(obj, x) FOR_EACH_2(macro, obj, __VA_ARGS__)
-#define FOR_EACH_4(macro, obj, x, ...) macro(obj, x) FOR_EACH_3(macro, obj, __VA_ARGS__)
-#define FOR_EACH_5(macro, obj, x, ...) macro(obj, x) FOR_EACH_4(macro, obj, __VA_ARGS__)
-#define FOR_EACH_6(macro, obj, x, ...) macro(obj, x) FOR_EACH_5(macro, obj, __VA_ARGS__)
-#define FOR_EACH_7(macro, obj, x, ...) macro(obj, x) FOR_EACH_6(macro, obj, __VA_ARGS__)
-#define FOR_EACH_8(macro, obj, x, ...) macro(obj, x) FOR_EACH_7(macro, obj, __VA_ARGS__)
-#define FOR_EACH_9(macro, obj, x, ...) macro(obj, x) FOR_EACH_8(macro, obj, __VA_ARGS__)
-#define FOR_EACH_10(macro, obj, x, ...) macro(obj, x) FOR_EACH_9(macro, obj, __VA_ARGS__)
-
-// Macro to zero a single field for non-pointer objects (using .)
-#define ZERO_ONE_FIELD(obj, field) (obj).field = 0;
-
-// Macro to zero a single field for pointer objects (using ->)
-#define ZERO_ONE_FIELD_PTR(obj, field) (obj)->field = 0;
-
-// Main ZeroFieldsIn macro for non-pointer objects
-#define ZeroFieldsIn(obj, ...) \
-do { \
-FOR_EACH(ZERO_ONE_FIELD, obj, __VA_ARGS__) \
-} while (0)
-
-// Main ZeroFieldsIn macro for pointer objects
-#define ZeroFieldsInPtr(obj, ...) \
-do { \
-FOR_EACH(ZERO_ONE_FIELD_PTR, obj, __VA_ARGS__) \
-} while (0)
 
 
 #endif //BASE_CORE_H
