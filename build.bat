@@ -8,7 +8,7 @@ set BUILD_DIR=%~dp0build
 
 set TIMINGS_FILE=%BASE_DIR%timings.ctm
 
-rem Path to ctime.exe (assumed to be in the base directory)
+:: Path to ctime.exe (assumed to be in the base directory)
 set CTIME=%BASE_DIR%ctime.exe
 
 :: Ensure the build directory exists
@@ -54,9 +54,7 @@ if "%msvc%"=="1" (
     set OUT_FLAG=-o
 )
 
-rem ===============================
-rem Begin Timing with ctime
-rem ===============================
+:: Begin Timing with ctime
 echo Starting timing...
 call "%CTIME%" -begin "%TIMINGS_FILE%"
 if errorlevel 1 (
@@ -72,9 +70,7 @@ if %ERRORLEVEL% neq 0 (
     exit /b 1
 )
 
-rem ===============================
-rem End Timing with ctime
-rem ===============================
+:: End Timing with ctime
 echo Ending timing...
 call "%CTIME%" -end "%TIMINGS_FILE%" %BUILD_ERROR%
 if errorlevel 1 (
